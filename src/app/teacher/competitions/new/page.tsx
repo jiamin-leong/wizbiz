@@ -61,17 +61,31 @@ export default function NewCompetitionPage() {
                 className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Number of Groups</label>
-              <input
-                name="numGroups"
-                type="number"
-                placeholder="e.g. 4"
-                min="2"
-                max="20"
-                required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Number of Groups</label>
+                <input
+                  name="numGroups"
+                  type="number"
+                  placeholder="e.g. 4"
+                  min="2"
+                  max="20"
+                  required
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-600 mb-1">Students per Group</label>
+                <input
+                  name="studentsPerGroup"
+                  type="number"
+                  placeholder="e.g. 5"
+                  min="1"
+                  max="20"
+                  required
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
               Each group will be automatically assigned a unique password (e.g. <span className="font-mono font-semibold">BLAZE-492</span>). You can find all group passwords on the competition page after creation.

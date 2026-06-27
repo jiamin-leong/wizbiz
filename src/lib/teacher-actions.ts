@@ -34,6 +34,7 @@ export async function createCompetition(formData: FormData) {
   const endDate = new Date(formData.get('endDate') as string)
   const initialBalance = parseInt(formData.get('initialBalance') as string)
   const numGroups = parseInt(formData.get('numGroups') as string)
+  const studentsPerGroup = Math.min(parseInt(formData.get('studentsPerGroup') as string), 20)
 
   const [competition] = await db
     .insert(competitions)
@@ -42,7 +43,7 @@ export async function createCompetition(formData: FormData) {
 
   for (let g = 0; g < numGroups; g++) {
     const theme = THEME_NAMES[g % THEME_NAMES.length]
-    const items = shuffle(GROUP_THEMES[theme])
+    const items = shuffle(GROUP_THEMES[theme]).slice(0, studentsPerGroup)
     const groupPassword = generateGroupPassword()
     const groupPasswordHash = await bcrypt.hash(groupPassword, 10)
 
