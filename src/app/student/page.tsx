@@ -7,6 +7,7 @@ import { students, groups, competitions, listings } from '@/db/schema'
 import { eq, and, inArray, ne, gt, desc } from 'drizzle-orm'
 import MarketplaceTab from './MarketplaceTab'
 import MyListingsTab from './MyListingsTab'
+import SendTab from './SendTab'
 import StudentTabs from './StudentTabs'
 
 export default async function StudentDashboard() {
@@ -23,13 +24,13 @@ export default async function StudentDashboard() {
       .from(competitions).where(eq(competitions.id, session.competitionId)).then(r => r[0]),
   ])
 
-  const allGroupIds = await db
-    .select({ id: groups.id })
+  const allGroups = await db
+    .select({ id: groups.id, name: groups.name, balance: groups.balance })
     .from(groups)
     .where(eq(groups.competitionId, session.competitionId))
-    .then(r => r.map(g => g.id))
 
-  const otherGroupIds = allGroupIds.filter(id => id !== session.groupId)
+  const otherGroups = allGroups.filter(g => g.id !== session.groupId)
+  const otherGroupIds = otherGroups.map(g => g.id)
 
   const [marketplaceListings, myListings] = await Promise.all([
     otherGroupIds.length > 0
@@ -121,6 +122,7 @@ export default async function StudentDashboard() {
         {/* Tabs + Content */}
         <main className="max-w-4xl mx-auto px-6 py-6">
           <StudentTabs
+            sendTab={<SendTab otherGroups={otherGroups} myBalance={group.balance} />}
             marketplaceTab={<MarketplaceTab listings={marketplaceListings} balance={group.balance} />}
             myListingsTab={<MyListingsTab listings={myListings} />}
             pendingCount={myListings.filter(l => l.status === 'pending').length}

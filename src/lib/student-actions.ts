@@ -1,10 +1,34 @@
 'use server'
 
 import { db } from '@/db'
-import { listings, groups, transactions, students } from '@/db/schema'
+import { listings, groups, transactions, students, transfers } from '@/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+
+export async function sendWizCoins(toGroupId: number, amount: number, message: string) {
+  const session = await getSession()
+  if (!session || session.role !== 'student') redirect('/')
+  if (toGroupId === session.groupId) return { error: 'You cannot send WizCoins to your own group' }
+  if (!amount || amount < 1) return { error: 'Amount must be at least 1' }
+
+  const [senderGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
+  if (senderGroup.balance < amount) return { error: 'Insufficient WizCoins' }
+
+  await db.transaction(async (tx) => {
+    await tx.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId))
+    await tx.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId))
+    await tx.insert(transfers).values({
+      fromGroupId: session.groupId,
+      toGroupId,
+      sentByStudentId: session.id,
+      amount,
+      message: message.trim() || null,
+    })
+  })
+
+  return { success: true }
+}
 
 export async function createListing(formData: FormData) {
   const session = await getSession()

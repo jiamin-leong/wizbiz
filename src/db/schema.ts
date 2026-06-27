@@ -57,6 +57,16 @@ export const competitionOrganizers = pgTable('competition_organizers', {
   teacherId: integer('teacher_id').references(() => teachers.id).notNull(),
 })
 
+export const transfers = pgTable('transfers', {
+  id: serial('id').primaryKey(),
+  fromGroupId: integer('from_group_id').references(() => groups.id).notNull(),
+  toGroupId: integer('to_group_id').references(() => groups.id).notNull(),
+  sentByStudentId: integer('sent_by_student_id').references(() => students.id).notNull(),
+  amount: integer('amount').notNull(),
+  message: text('message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
   listingId: integer('listing_id').references(() => listings.id).notNull(),
