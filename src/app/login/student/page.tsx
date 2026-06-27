@@ -21,7 +21,7 @@ export default function StudentLoginPage() {
           <input
             name="loginCode"
             type="text"
-            placeholder="Login Code (e.g. GRP1-A)"
+            placeholder="Login Code (e.g. FRUITS-APPLE)"
             required
             className="border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 uppercase"
           />
