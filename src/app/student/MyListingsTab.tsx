@@ -119,7 +119,7 @@ export default function MyListingsTab({ listings }: { listings: Listing[] }) {
                   <input
                     type="number"
                     min="1"
-                    placeholder="qty"
+                    placeholder="0"
                     value={restockQty[l.id] || ''}
                     onChange={e => setRestockQty(r => ({ ...r, [l.id]: e.target.value }))}
                     className="w-16 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 text-center"
@@ -129,7 +129,7 @@ export default function MyListingsTab({ listings }: { listings: Listing[] }) {
                     disabled={restocking === l.id || !restockQty[l.id]}
                     className="text-sm bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-50"
                   >
-                    {restocking === l.id ? '…' : 'Restock'}
+                    {restocking === l.id ? '…' : '+ Add stock'}
                   </button>
                 </div>
               )}
