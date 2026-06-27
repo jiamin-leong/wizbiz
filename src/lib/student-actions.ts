@@ -15,17 +15,17 @@ export async function sendWizCoins(toGroupId: number, amount: number, message: s
   const [senderGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
   if (senderGroup.balance < amount) return { error: 'Insufficient WizCoins' }
 
-  await db.transaction(async (tx) => {
-    await tx.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId))
-    await tx.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId))
-    await tx.insert(transfers).values({
+  await db.batch([
+    db.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId)),
+    db.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId)),
+    db.insert(transfers).values({
       fromGroupId: session.groupId,
       toGroupId,
       sentByStudentId: session.id,
       amount,
       message: message.trim() || null,
-    })
-  })
+    }),
+  ])
 
   return { success: true }
 }
@@ -68,18 +68,18 @@ export async function buyListing(listingId: number) {
   if (listing.groupId === session.groupId) return { error: 'You cannot buy your own group\'s listings' }
   if (buyerGroup.balance < listing.price) return { error: 'Insufficient WizCoins' }
 
-  await db.transaction(async (tx) => {
-    await tx.update(groups).set({ balance: sql`${groups.balance} - ${listing.price}` }).where(eq(groups.id, session.groupId))
-    await tx.update(groups).set({ balance: sql`${groups.balance} + ${listing.price}` }).where(eq(groups.id, listing.groupId))
-    await tx.update(listings).set({ quantity: sql`${listings.quantity} - 1` }).where(eq(listings.id, listingId))
-    await tx.insert(transactions).values({
+  await db.batch([
+    db.update(groups).set({ balance: sql`${groups.balance} - ${listing.price}` }).where(eq(groups.id, session.groupId)),
+    db.update(groups).set({ balance: sql`${groups.balance} + ${listing.price}` }).where(eq(groups.id, listing.groupId)),
+    db.update(listings).set({ quantity: sql`${listings.quantity} - 1` }).where(eq(listings.id, listingId)),
+    db.insert(transactions).values({
       listingId,
       buyerStudentId: session.id,
       buyerGroupId: session.groupId,
       sellerGroupId: listing.groupId,
       amount: listing.price,
-    })
-  })
+    }),
+  ])
 
   return { success: true }
 }
