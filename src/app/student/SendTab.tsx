@@ -8,12 +8,13 @@ type Group = { id: number; name: string; balance: number }
 
 export default function SendTab({
   otherGroups,
-  myBalance,
+  myBalance: initialBalance,
 }: {
   otherGroups: Group[]
   myBalance: number
 }) {
   const router = useRouter()
+  const [balance, setBalance] = useState(initialBalance)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
@@ -23,7 +24,7 @@ export default function SendTab({
 
   const selected = otherGroups.find(g => g.id === selectedId)
   const parsedAmount = parseInt(amount) || 0
-  const canSend = selectedId && parsedAmount >= 1 && parsedAmount <= myBalance
+  const canSend = selectedId && parsedAmount >= 1 && parsedAmount <= balance
 
   async function handleSend() {
     if (!canSend || !selectedId) return
@@ -35,10 +36,13 @@ export default function SendTab({
     if (result?.error) {
       setError(result.error)
     } else {
+      // Optimistic update — instant feedback
+      setBalance(b => b - parsedAmount)
       setSuccess(`Sent ${parsedAmount.toLocaleString()} WizCoins to ${selected?.name}!`)
       setSelectedId(null)
       setAmount('')
       setMessage('')
+      // Background sync
       router.refresh()
     }
   }
@@ -82,7 +86,7 @@ export default function SendTab({
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">WC</span>
         </div>
-        <p className="text-xs text-gray-400 mt-1">You have {myBalance.toLocaleString()} WizCoins available</p>
+        <p className="text-xs text-gray-400 mt-1">You have {balance.toLocaleString()} WizCoins available</p>
       </div>
 
       {/* Message */}
