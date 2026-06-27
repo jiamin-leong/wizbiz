@@ -46,24 +46,50 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
     students: allStudents.filter(s => s.groupId === g.id),
   }))
 
+  const totalStudents = allStudents.length
+  const totalGroups = competitionGroups.length
+  const startDate = new Date(competition.startDate)
+  const endDate = new Date(competition.endDate)
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
         <div className="mb-6">
           <Link href="/teacher" className="text-sm text-gray-400 hover:underline">← Back</Link>
         </div>
 
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-amber-600">{competition.name}</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              {new Date(competition.startDate).toLocaleDateString()} → {new Date(competition.endDate).toLocaleDateString()} · Starting balance: {competition.initialBalance} WizCoins
-            </p>
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <div className="flex justify-between items-start mb-5">
+            <h1 className="text-3xl font-extrabold text-gray-900">{competition.name}</h1>
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+              competition.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {competition.status}
+            </span>
           </div>
-          <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-            competition.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
-            {competition.status}
-          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div className="col-span-2 sm:col-span-2 bg-amber-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Duration</p>
+              <p className="text-base font-bold text-gray-800">
+                {startDate.toLocaleDateString()} → {endDate.toLocaleDateString()}
+              </p>
+              <p className="text-sm text-amber-500 font-medium mt-0.5">{totalDays} days</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Groups</p>
+              <p className="text-3xl font-extrabold text-amber-600">{totalGroups}</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Students</p>
+              <p className="text-3xl font-extrabold text-amber-600">{totalStudents}</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Starting Balance</p>
+              <p className="text-xl font-extrabold text-amber-600">{competition.initialBalance.toLocaleString()}</p>
+              <p className="text-xs text-gray-400 mt-0.5">WizCoins</p>
+            </div>
+          </div>
         </div>
 
         {/* Student Credentials */}
