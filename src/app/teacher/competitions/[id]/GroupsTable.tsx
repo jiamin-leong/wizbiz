@@ -158,7 +158,7 @@ export default function GroupsTable({
                           disabled={previewing === g.id}
                           className="text-xs text-amber-500 hover:text-amber-700 transition mt-0.5 disabled:opacity-50"
                         >
-                          {previewing === g.id ? 'Loading…' : '👁 Preview'}
+                          {previewing === g.id ? 'Loading…' : '🔍 Preview'}
                         </button>
                       )}
                     </div>

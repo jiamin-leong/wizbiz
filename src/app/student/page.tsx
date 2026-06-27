@@ -15,7 +15,7 @@ export default async function StudentDashboard() {
       {isPreview && (
         <div className="fixed top-0 inset-x-0 z-50 bg-amber-500 text-white flex items-center justify-between px-6 py-2.5 shadow-md">
           <div className="flex items-center gap-2 text-sm font-medium">
-            <span>👁</span>
+            <span>🔍</span>
             <span>You are previewing the student view</span>
           </div>
           <form action={exitStudentPreview}>
