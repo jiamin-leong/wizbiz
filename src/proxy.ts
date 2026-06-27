@@ -9,6 +9,15 @@ export async function proxy(request: NextRequest) {
 
   const isAuth = !!token && await jwtVerify(token, secret).then(() => true).catch(() => false)
 
+  // Admin routes — protected by separate admin_session cookie
+  if (pathname.startsWith('/admin')) {
+    if (pathname === '/admin/login') return NextResponse.next()
+    const adminToken = request.cookies.get('admin_session')?.value
+    const isAdmin = !!adminToken && await jwtVerify(adminToken, secret).then(() => true).catch(() => false)
+    if (!isAdmin) return NextResponse.redirect(new URL('/admin/login', request.url))
+    return NextResponse.next()
+  }
+
   // Public routes
   if (pathname === '/' || pathname.startsWith('/login')) {
     if (isAuth) {
