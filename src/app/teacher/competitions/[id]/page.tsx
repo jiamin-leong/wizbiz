@@ -74,22 +74,35 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
             </div>
             <p className="text-xs text-amber-600 ml-auto max-w-xs text-right">All students use this password. Share it with your class along with their login code.</p>
           </div>
-          <h3 className="text-sm font-semibold text-gray-600 mb-2">Login Codes by Group</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {groupsWithStudents.map(g => (
-              <div key={g.id} className="bg-white rounded-xl shadow-sm p-4">
-                <p className="font-semibold text-gray-700 mb-2">{g.name}</p>
-                <div className="flex flex-wrap gap-2">
-                  {g.students.map(s => (
-                    <span key={s.id} className="bg-amber-100 text-amber-700 text-xs font-mono px-3 py-1 rounded-full">
-                      {s.loginCode}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-amber-50 border-b border-amber-100">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">#</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Group</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Participants</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupsWithStudents.map((g, i) => (
+                  <tr key={g.id} className="border-b border-gray-50 last:border-0 hover:bg-amber-50/40 transition">
+                    <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-700">{g.name}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {g.students.map(s => (
+                          <span key={s.id} className="bg-amber-100 text-amber-700 text-xs font-mono px-2.5 py-1 rounded-full">
+                            {s.loginCode}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Share these codes + the student password with your students.</p>
+          <p className="text-xs text-gray-400 mt-2">Share these codes + the shared password with your students.</p>
         </section>
 
         {/* Listing Approval Queue */}
