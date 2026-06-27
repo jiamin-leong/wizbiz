@@ -7,6 +7,35 @@ import bcrypt from 'bcryptjs'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
+const GROUP_THEMES: Record<string, string[]> = {
+  Fruits:    ['APPLE', 'MANGO', 'BERRY', 'GRAPE', 'LEMON'],
+  Animals:   ['TIGER', 'PANDA', 'EAGLE', 'SHARK', 'WOLF'],
+  People:    ['CHIEF', 'SCOUT', 'SAGE', 'HERO', 'ACE'],
+  Colors:    ['AMBER', 'CORAL', 'JADE', 'RUBY', 'ONYX'],
+  Sports:    ['SPRINT', 'VAULT', 'LUNGE', 'PIVOT', 'SURGE'],
+  Space:     ['COMET', 'NOVA', 'ORBIT', 'PULSAR', 'NEBULA'],
+  Ocean:     ['KELP', 'TIDE', 'DRIFT', 'WAVE', 'REEF'],
+  Weather:   ['STORM', 'FROST', 'BLAZE', 'GUST', 'MIST'],
+  Music:     ['CHORD', 'TEMPO', 'PITCH', 'RIFF', 'BEAT'],
+  Mountains: ['PEAK', 'RIDGE', 'CLIFF', 'VALE', 'CREST'],
+  Rivers:    ['BROOK', 'CREEK', 'DELTA', 'RAPID', 'FORD'],
+  Birds:     ['SWIFT', 'CRANE', 'FINCH', 'ROBIN', 'WREN'],
+  Planets:   ['MARS', 'VENUS', 'SATURN', 'PLUTO', 'LUNA'],
+  Flowers:   ['ROSE', 'LILY', 'IRIS', 'POPPY', 'DAISY'],
+  Food:      ['PASTA', 'CURRY', 'SUSHI', 'TACO', 'WAFFLE'],
+  Insects:   ['MOTH', 'WASP', 'BEETLE', 'CRICKET', 'ANT'],
+  Minerals:  ['QUARTZ', 'TOPAZ', 'GARNET', 'FLINT', 'OPAL'],
+  Vehicles:  ['ROCKET', 'KAYAK', 'GLIDER', 'BLIMP', 'TRAM'],
+  Countries: ['ATLAS', 'HAVEN', 'MESA', 'VALE', 'FORGE'],
+  Plants:    ['FERN', 'CACTUS', 'BONSAI', 'MOSS', 'VINE'],
+}
+
+const THEME_NAMES = Object.keys(GROUP_THEMES)
+
+function shuffle<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5)
+}
+
 export async function createCompetition(formData: FormData) {
   const session = await getSession()
   if (!session || session.role !== 'teacher') redirect('/')
@@ -25,15 +54,18 @@ export async function createCompetition(formData: FormData) {
 
   const passwordHash = await bcrypt.hash(studentPassword, 10)
 
-  for (let g = 1; g <= numGroups; g++) {
+  for (let g = 0; g < numGroups; g++) {
+    const theme = THEME_NAMES[g % THEME_NAMES.length]
+    const items = shuffle(GROUP_THEMES[theme])
+
     const [group] = await db
       .insert(groups)
-      .values({ competitionId: competition.id, name: `Group ${g}`, balance: initialBalance })
+      .values({ competitionId: competition.id, name: theme, balance: initialBalance })
       .returning()
 
-    const studentCodes = ['A', 'B', 'C', 'D', 'E'].map(letter => ({
+    const studentCodes = items.map(item => ({
       groupId: group.id,
-      loginCode: `GRP${g}-${letter}`,
+      loginCode: `${theme.toUpperCase()}-${item}`,
       passwordHash,
     }))
 
