@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ListingApprovalQueue from './ListingApprovalQueue'
 import PasswordReveal from './PasswordReveal'
+import AutoRefresh from './AutoRefresh'
 
 export default async function CompetitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -76,6 +77,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">#</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Group</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-16">Count</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-amber-600 uppercase tracking-wide w-36">WizCoins</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Participants</th>
                 </tr>
               </thead>
@@ -85,6 +87,14 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                     <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
                     <td className="px-4 py-3 font-semibold text-gray-700">{g.name}</td>
                     <td className="px-4 py-3 font-semibold text-gray-700">{g.students.length}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-bold text-amber-600">{g.balance.toLocaleString()}</span>
+                      <span className="text-xs text-gray-400 ml-1">
+                        {g.balance >= competition.initialBalance
+                          ? <span className="text-green-500">▲ {(g.balance - competition.initialBalance).toLocaleString()}</span>
+                          : <span className="text-red-400">▼ {(competition.initialBalance - g.balance).toLocaleString()}</span>}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         {g.students.map(s => (
@@ -100,6 +110,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
             </table>
           </div>
           <p className="text-xs text-gray-400 mt-2">Share these codes + the shared password with your students.</p>
+          <AutoRefresh />
         </section>
 
         {/* Listing Approval Queue */}
