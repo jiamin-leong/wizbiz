@@ -5,10 +5,9 @@ import { cookies } from 'next/headers'
 import { db } from '@/db'
 import { students, groups, competitions, listings, transactions, transfers } from '@/db/schema'
 import { eq, and, inArray, gt, desc, aliasedTable } from 'drizzle-orm'
-import MarketplaceTab from './MarketplaceTab'
+import { BalanceProvider } from './BalanceContext'
+import BalanceDisplay from './BalanceDisplay'
 import MyListingsTab from './MyListingsTab'
-import SendTab from './SendTab'
-import HistoryTab from './HistoryTab'
 import StudentTabs from './StudentTabs'
 
 export default async function StudentDashboard() {
@@ -96,10 +95,8 @@ export default async function StudentDashboard() {
     ...receivedTx.map(t => ({ id: `recv-${t.id}`, type: 'received' as const, description: 'WizCoins received', otherGroup: t.otherGroup, amount: t.amount, message: t.message, createdAt: t.createdAt })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
-  const balanceChange = group.balance - competition.initialBalance
-
   return (
-    <>
+    <BalanceProvider initialBalance={group.balance}>
       {isPreview && (
         <div className="fixed top-0 inset-x-0 z-50 bg-amber-500 text-white flex items-center justify-between px-6 py-2.5 shadow-md">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -115,7 +112,6 @@ export default async function StudentDashboard() {
       )}
 
       <div className={`min-h-screen bg-amber-50 ${isPreview ? 'pt-12' : ''}`}>
-        {/* Header */}
         <header className="bg-amber-500 px-6 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-start mb-6">
@@ -138,29 +134,21 @@ export default async function StudentDashboard() {
                 <p className="text-white text-3xl font-extrabold tracking-wide">{student?.loginCode}</p>
                 <p className="text-amber-100 text-base font-semibold mt-1">{group.name} group</p>
               </div>
-              <div className="sm:text-right">
-                <p className="text-amber-100 text-sm font-medium mb-1">Your balance</p>
-                <p className="text-white text-5xl font-extrabold">{group.balance.toLocaleString()}</p>
-                <p className="text-amber-100 text-base font-semibold mt-1">WizCoins</p>
-                <p className={`text-sm font-semibold mt-1 ${balanceChange >= 0 ? 'text-green-200' : 'text-red-200'}`}>
-                  {balanceChange >= 0 ? `▲ ${balanceChange.toLocaleString()}` : `▼ ${Math.abs(balanceChange).toLocaleString()}`} from start
-                </p>
-              </div>
+              <BalanceDisplay competitionInitialBalance={competition.initialBalance} />
             </div>
           </div>
         </header>
 
-        {/* Tabs + Content */}
         <main className="max-w-4xl mx-auto px-6 py-6">
           <StudentTabs
-            sendTab={<SendTab otherGroups={otherGroups} myBalance={group.balance} />}
-            marketplaceTab={<MarketplaceTab listings={marketplaceListings} balance={group.balance} />}
-            myListingsTab={<MyListingsTab listings={myListings} />}
-            historyTab={<HistoryTab entries={historyEntries} />}
+            otherGroups={otherGroups}
+            marketplaceListings={marketplaceListings}
+            myListings={myListings}
+            initialHistory={historyEntries}
             pendingCount={myListings.filter(l => l.status === 'pending').length}
           />
         </main>
       </div>
-    </>
+    </BalanceProvider>
   )
 }

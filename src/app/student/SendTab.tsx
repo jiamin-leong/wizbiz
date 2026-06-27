@@ -3,18 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { sendWizCoins } from '@/lib/student-actions'
+import { useBalance } from './BalanceContext'
 
 type Group = { id: number; name: string; balance: number }
 
 export default function SendTab({
   otherGroups,
-  myBalance: initialBalance,
+  onSent,
 }: {
   otherGroups: Group[]
-  myBalance: number
+  onSent: (entry: { id: string; type: 'sent'; description: string; otherGroup: string; amount: number; message?: string | null; createdAt: Date }) => void
 }) {
   const router = useRouter()
-  const [balance, setBalance] = useState(initialBalance)
+  const { balance, spend, rollback } = useBalance()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
@@ -32,18 +33,26 @@ export default function SendTab({
     const sentToId = selectedId
     const sentMessage = message
 
-    // Optimistic update — instant, before the server call
-    setBalance(b => b - sentAmount)
+    // Instant update
+    spend(sentAmount)
     setSuccess(`Sent ${sentAmount.toLocaleString()} WizCoins to ${sentToName}!`)
     setSelectedId(null)
     setAmount('')
     setMessage('')
     setError('')
+    onSent({
+      id: `sent-optimistic-${Date.now()}`,
+      type: 'sent',
+      description: 'WizCoins sent',
+      otherGroup: sentToName,
+      amount: sentAmount,
+      message: sentMessage || null,
+      createdAt: new Date(),
+    })
 
     const result = await sendWizCoins(sentToId, sentAmount, sentMessage)
     if (result?.error) {
-      // Roll back
-      setBalance(b => b + sentAmount)
+      rollback(sentAmount)
       setSuccess('')
       setError(result.error)
     } else {

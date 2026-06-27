@@ -1,21 +1,34 @@
 'use client'
 
 import { useState } from 'react'
+import SendTab from './SendTab'
+import MarketplaceTab from './MarketplaceTab'
+import MyListingsTab from './MyListingsTab'
+import HistoryTab, { type HistoryEntry } from './HistoryTab'
+
+type Group = { id: number; name: string; balance: number }
+type Listing = { id: number; name: string; description: string | null; price: number; quantity: number; groupId: number; groupName: string }
+type MyListing = { id: number; name: string; description: string | null; price: number; quantity: number; status: 'pending' | 'approved' | 'rejected' }
 
 export default function StudentTabs({
-  sendTab,
-  marketplaceTab,
-  myListingsTab,
-  historyTab,
+  otherGroups,
+  marketplaceListings,
+  myListings,
+  initialHistory,
   pendingCount,
 }: {
-  sendTab: React.ReactNode
-  marketplaceTab: React.ReactNode
-  myListingsTab: React.ReactNode
-  historyTab: React.ReactNode
+  otherGroups: Group[]
+  marketplaceListings: Listing[]
+  myListings: MyListing[]
+  initialHistory: HistoryEntry[]
   pendingCount: number
 }) {
   const [tab, setTab] = useState<'send' | 'marketplace' | 'listings' | 'history'>('send')
+  const [history, setHistory] = useState<HistoryEntry[]>(initialHistory)
+
+  function addHistory(entry: HistoryEntry) {
+    setHistory(h => [entry, ...h])
+  }
 
   const tabClass = (t: string) =>
     `px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
@@ -46,10 +59,14 @@ export default function StudentTabs({
         </button>
       </div>
 
-      {tab === 'send' && sendTab}
-      {tab === 'marketplace' && marketplaceTab}
-      {tab === 'listings' && myListingsTab}
-      {tab === 'history' && historyTab}
+      {tab === 'send' && (
+        <SendTab otherGroups={otherGroups} onSent={addHistory} />
+      )}
+      {tab === 'marketplace' && (
+        <MarketplaceTab listings={marketplaceListings} onBought={addHistory} />
+      )}
+      {tab === 'listings' && <MyListingsTab listings={myListings} />}
+      {tab === 'history' && <HistoryTab entries={history} />}
     </div>
   )
 }

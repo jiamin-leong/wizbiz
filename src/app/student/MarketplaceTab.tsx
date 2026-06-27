@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { buyListing } from '@/lib/student-actions'
+import { useBalance } from './BalanceContext'
 
 type Listing = {
   id: number
@@ -15,14 +16,14 @@ type Listing = {
 
 export default function MarketplaceTab({
   listings: initialListings,
-  balance: initialBalance,
+  onBought,
 }: {
   listings: Listing[]
-  balance: number
+  onBought: (entry: { id: string; type: 'bought'; description: string; otherGroup: string; amount: number; createdAt: Date }) => void
 }) {
   const router = useRouter()
+  const { balance, spend } = useBalance()
   const [listings, setListings] = useState(initialListings)
-  const [balance, setBalance] = useState(initialBalance)
   const [selected, setSelected] = useState<Listing | null>(null)
   const [message, setMessage] = useState('')
   const [buying, setBuying] = useState(false)
@@ -51,12 +52,20 @@ export default function MarketplaceTab({
     if (result?.error) {
       setError(result.error)
     } else {
-      setBalance(b => b - selected.price)
+      spend(selected.price)
       setPurchased(s => new Set(s).add(selected.id))
       setListings(ls =>
         ls.map(l => l.id === selected.id ? { ...l, quantity: l.quantity - 1 } : l)
           .filter(l => l.quantity > 0)
       )
+      onBought({
+        id: `buy-optimistic-${Date.now()}`,
+        type: 'bought',
+        description: selected.name,
+        otherGroup: selected.groupName,
+        amount: selected.price,
+        createdAt: new Date(),
+      })
       closeBuy()
       router.refresh()
     }

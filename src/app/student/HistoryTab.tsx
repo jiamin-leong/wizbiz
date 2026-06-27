@@ -1,6 +1,6 @@
 'use client'
 
-type Entry = {
+export type HistoryEntry = {
   id: string
   type: 'bought' | 'sold' | 'sent' | 'received'
   description: string
@@ -17,7 +17,7 @@ const typeConfig = {
   received: { label: 'Received', sign: '+', color: 'text-green-600', bg: 'bg-green-50', icon: '📥' },
 }
 
-export default function HistoryTab({ entries }: { entries: Entry[] }) {
+export default function HistoryTab({ entries }: { entries: HistoryEntry[] }) {
   if (entries.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400">
