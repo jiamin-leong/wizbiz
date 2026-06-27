@@ -28,9 +28,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     <div className="min-h-screen bg-amber-50 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-amber-100 flex flex-col shrink-0">
-        <div className="px-6 py-5 border-b border-amber-100">
-          <span className="text-xl font-bold text-amber-600">WizBiz</span>
-          <p className="text-xs text-gray-400 mt-0.5">Teacher Portal</p>
+        <div className="px-6 py-6 border-b border-amber-100 bg-amber-500">
+          <span className="text-2xl font-extrabold text-white tracking-tight">WizBiz</span>
+          <p className="text-xs font-semibold text-amber-100 uppercase tracking-widest mt-0.5">Teacher Portal</p>
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
