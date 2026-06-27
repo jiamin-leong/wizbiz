@@ -58,13 +58,14 @@ export async function buyListing(listingId: number) {
   const session = await getSession()
   if (!session || session.role !== 'student') redirect('/')
 
-  const [listing] = await db.select().from(listings).where(eq(listings.id, listingId))
+  const [[listing], [buyerGroup]] = await Promise.all([
+    db.select().from(listings).where(eq(listings.id, listingId)),
+    db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId)),
+  ])
   if (!listing) return { error: 'Listing not found' }
   if (listing.status !== 'approved') return { error: 'Listing is no longer available' }
   if (listing.quantity < 1) return { error: 'This item is sold out' }
   if (listing.groupId === session.groupId) return { error: 'You cannot buy your own group\'s listings' }
-
-  const [buyerGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
   if (buyerGroup.balance < listing.price) return { error: 'Insufficient WizCoins' }
 
   await db.transaction(async (tx) => {

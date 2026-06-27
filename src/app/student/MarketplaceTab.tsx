@@ -14,15 +14,18 @@ type Listing = {
 }
 
 export default function MarketplaceTab({
-  listings,
-  balance,
+  listings: initialListings,
+  balance: initialBalance,
 }: {
   listings: Listing[]
   balance: number
 }) {
   const router = useRouter()
+  const [listings, setListings] = useState(initialListings)
+  const [balance, setBalance] = useState(initialBalance)
   const [confirming, setConfirming] = useState<number | null>(null)
   const [buying, setBuying] = useState<number | null>(null)
+  const [purchased, setPurchased] = useState<Set<number>>(new Set())
   const [error, setError] = useState<{ id: number; msg: string } | null>(null)
 
   async function handleBuy(listing: Listing) {
@@ -31,9 +34,18 @@ export default function MarketplaceTab({
     const result = await buyListing(listing.id)
     setBuying(null)
     setConfirming(null)
+
     if (result?.error) {
       setError({ id: listing.id, msg: result.error })
     } else {
+      // Optimistic update — instant UI feedback
+      setBalance(b => b - listing.price)
+      setPurchased(s => new Set(s).add(listing.id))
+      setListings(ls =>
+        ls.map(l => l.id === listing.id ? { ...l, quantity: l.quantity - 1 } : l)
+          .filter(l => l.quantity > 0)
+      )
+      // Background sync — don't await
       router.refresh()
     }
   }
@@ -70,7 +82,9 @@ export default function MarketplaceTab({
               <p className="text-xs text-gray-400">WizCoins · {l.quantity} left</p>
             </div>
 
-            {confirming === l.id ? (
+            {purchased.has(l.id) ? (
+              <span className="text-sm font-semibold text-green-500">✓ Bought!</span>
+            ) : confirming === l.id ? (
               <div className="flex flex-col items-end gap-1">
                 <p className="text-xs text-gray-500 font-medium">Confirm purchase?</p>
                 <div className="flex gap-1.5">
