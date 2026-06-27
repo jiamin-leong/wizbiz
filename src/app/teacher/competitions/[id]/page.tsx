@@ -54,7 +54,9 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
   return (
     <div className="max-w-4xl">
         <div className="mb-6">
-          <Link href="/teacher" className="text-sm text-gray-400 hover:underline">← Back</Link>
+          <Link href="/teacher" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:border-amber-300 hover:text-amber-600 px-3 py-1.5 rounded-lg shadow-sm transition">
+            ← Back
+          </Link>
         </div>
 
         {/* Header */}
