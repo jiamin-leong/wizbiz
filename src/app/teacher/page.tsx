@@ -54,15 +54,18 @@ export default async function TeacherDashboard() {
             <Link
               key={c.id}
               href={`/teacher/competitions/${c.id}`}
-              className="bg-white rounded-xl px-6 py-5 shadow-sm hover:shadow-md transition"
+              className="bg-white rounded-xl px-6 py-5 shadow-sm hover:shadow-md hover:border-amber-300 border border-transparent transition cursor-pointer group"
             >
               <div className="flex justify-between items-start mb-3">
-                <p className="text-lg font-bold text-gray-800">{c.name}</p>
-                <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                  c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {c.status}
-                </span>
+                <p className="text-2xl font-extrabold text-gray-900 group-hover:text-amber-600 transition">{c.name}</p>
+                <div className="flex items-center gap-2 shrink-0 ml-4">
+                  <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                    c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {c.status}
+                  </span>
+                  <span className="text-gray-300 group-hover:text-amber-400 transition text-lg">→</span>
+                </div>
               </div>
               <div className="flex gap-6">
                 <div>
