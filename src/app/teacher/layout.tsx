@@ -3,14 +3,14 @@ import { logout } from '@/lib/actions'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { db } from '@/db'
-import { teachers, competitions } from '@/db/schema'
+import { teachers, competitions, competitionOrganizers } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session || session.role !== 'teacher') redirect('/')
 
-  const [teacher, allCompetitions] = await Promise.all([
+  const [teacher, ownedComps, coOrgComps] = await Promise.all([
     db.select({ name: teachers.name, email: teachers.email })
       .from(teachers)
       .where(eq(teachers.id, session.id))
@@ -19,7 +19,19 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       .from(competitions)
       .where(eq(competitions.teacherId, session.id))
       .orderBy(desc(competitions.createdAt)),
+    db.select({ id: competitions.id, name: competitions.name, status: competitions.status })
+      .from(competitionOrganizers)
+      .innerJoin(competitions, eq(competitions.id, competitionOrganizers.competitionId))
+      .where(eq(competitionOrganizers.teacherId, session.id))
+      .orderBy(desc(competitions.createdAt)),
   ])
+
+  const seen = new Set<number>()
+  const allCompetitions = [...ownedComps, ...coOrgComps].filter(c => {
+    if (seen.has(c.id)) return false
+    seen.add(c.id)
+    return true
+  })
 
   const active = allCompetitions.filter(c => c.status === 'active')
   const past = allCompetitions.filter(c => c.status === 'ended')

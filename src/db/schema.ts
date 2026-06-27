@@ -51,6 +51,12 @@ export const listings = pgTable('listings', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const competitionOrganizers = pgTable('competition_organizers', {
+  id: serial('id').primaryKey(),
+  competitionId: integer('competition_id').references(() => competitions.id).notNull(),
+  teacherId: integer('teacher_id').references(() => teachers.id).notNull(),
+})
+
 export const transactions = pgTable('transactions', {
   id: serial('id').primaryKey(),
   listingId: integer('listing_id').references(() => listings.id).notNull(),

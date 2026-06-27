@@ -1,6 +1,6 @@
 import { getSession } from '@/lib/auth'
 import { db } from '@/db'
-import { competitions, groups, students, listings } from '@/db/schema'
+import { competitions, groups, students, listings, competitionOrganizers, teachers } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -16,9 +16,17 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
   const [competition] = await db
     .select()
     .from(competitions)
-    .where(and(eq(competitions.id, parseInt(id)), eq(competitions.teacherId, session.id)))
+    .where(eq(competitions.id, parseInt(id)))
 
   if (!competition) redirect('/teacher')
+
+  const isOwner = competition.teacherId === session.id
+  if (!isOwner) {
+    const [coOrg] = await db.select({ id: competitionOrganizers.id })
+      .from(competitionOrganizers)
+      .where(and(eq(competitionOrganizers.competitionId, competition.id), eq(competitionOrganizers.teacherId, session.id)))
+    if (!coOrg) redirect('/teacher')
+  }
 
   const competitionGroups = await db
     .select()
@@ -29,8 +37,8 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
   const groupIds = competitionGroups.map(g => g.id)
   const groupNameMap = Object.fromEntries(competitionGroups.map(g => [g.id, g.name]))
 
-  // Single query for all students + pending listings in parallel
-  const [allStudents, filteredPending] = await Promise.all([
+  // Fetch students, pending listings, and co-organizers in parallel
+  const [allStudents, filteredPending, coOrgRows] = await Promise.all([
     db.select({ id: students.id, loginCode: students.loginCode, groupId: students.groupId })
       .from(students)
       .where(inArray(students.groupId, groupIds))
@@ -39,6 +47,10 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
       .from(listings)
       .where(and(eq(listings.status, 'pending'), inArray(listings.groupId, groupIds)))
       .orderBy(listings.createdAt),
+    db.select({ id: teachers.id, name: teachers.name, email: teachers.email })
+      .from(competitionOrganizers)
+      .innerJoin(teachers, eq(teachers.id, competitionOrganizers.teacherId))
+      .where(eq(competitionOrganizers.competitionId, competition.id)),
   ])
 
   const groupsWithStudents = competitionGroups.map(g => ({
@@ -72,6 +84,9 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           initialBalance={competition.initialBalance}
           listings={filteredPending}
           groupNameMap={groupNameMap}
+          competitionId={competition.id}
+          coOrganizers={coOrgRows}
+          isOwner={isOwner}
         />
         <AutoRefresh />
     </div>
