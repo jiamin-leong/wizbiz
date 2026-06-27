@@ -29,6 +29,10 @@ export default function MarketplaceTab({
   const [buying, setBuying] = useState(false)
   const [error, setError] = useState('')
   const [purchased, setPurchased] = useState<Set<number>>(new Set())
+  const [filterGroup, setFilterGroup] = useState<string | null>(null)
+
+  const groups = Array.from(new Set(listings.map(l => l.groupName))).sort()
+  const visibleListings = filterGroup ? listings.filter(l => l.groupName === filterGroup) : listings
 
   function openBuy(listing: Listing) {
     setSelected(listing)
@@ -155,9 +159,32 @@ export default function MarketplaceTab({
   }
 
   return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setFilterGroup(null)}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition ${
+            filterGroup === null ? 'bg-amber-500 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-amber-300'
+          }`}
+        >
+          All
+        </button>
+        {groups.map(g => (
+          <button
+            key={g}
+            onClick={() => setFilterGroup(g === filterGroup ? null : g)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-full transition ${
+              filterGroup === g ? 'bg-amber-500 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-amber-300'
+            }`}
+          >
+            {g}
+          </button>
+        ))}
+      </div>
+
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-50">
-        {listings.map(l => (
+        {visibleListings.map(l => (
           <div key={l.id} className="flex items-center gap-3 px-4 py-3 hover:bg-amber-50 transition">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -191,6 +218,7 @@ export default function MarketplaceTab({
           </div>
         ))}
       </div>
+    </div>
     </div>
   )
 }
