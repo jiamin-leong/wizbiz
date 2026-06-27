@@ -78,7 +78,7 @@ export default function SendTab({
           <input
             type="number"
             min="1"
-            max={myBalance}
+            max={balance}
             value={amount}
             onChange={e => { setAmount(e.target.value); setError(''); setSuccess('') }}
             placeholder="e.g. 500"
