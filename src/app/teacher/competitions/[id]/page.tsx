@@ -80,6 +80,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                 <tr className="bg-amber-50 border-b border-amber-100">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">#</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Group</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-16">Count</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Participants</th>
                 </tr>
               </thead>
@@ -88,6 +89,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                   <tr key={g.id} className="border-b border-gray-50 last:border-0 hover:bg-amber-50/40 transition">
                     <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
                     <td className="px-4 py-3 font-semibold text-gray-700">{g.name}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-700">{g.students.length}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         {g.students.map(s => (
