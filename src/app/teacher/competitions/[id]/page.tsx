@@ -5,6 +5,7 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ListingApprovalQueue from './ListingApprovalQueue'
+import PasswordReveal from './PasswordReveal'
 
 export default async function CompetitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -67,13 +68,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
         {/* Student Credentials */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-3">Student Login Credentials</h2>
-          <div className="bg-amber-100 border border-amber-300 rounded-xl p-4 mb-4 flex items-center gap-4">
-            <div>
-              <p className="text-xs text-amber-700 font-medium uppercase tracking-wide mb-1">Shared Password</p>
-              <p className="text-2xl font-bold font-mono text-amber-800">{competition.studentPassword}</p>
-            </div>
-            <p className="text-xs text-amber-600 ml-auto max-w-xs text-right">All students use this password. Share it with your class along with their login code.</p>
-          </div>
+          <PasswordReveal password={competition.studentPassword} />
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
