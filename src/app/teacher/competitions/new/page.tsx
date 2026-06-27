@@ -13,11 +13,10 @@ export default function NewCompetitionPage() {
   }
 
   return (
-    <main className="min-h-screen bg-amber-50 p-8">
-      <div className="max-w-lg mx-auto">
-        <div className="mb-6">
-          <Link href="/teacher" className="text-sm text-gray-400 hover:underline">← Back</Link>
-        </div>
+    <div className="max-w-lg">
+      <div className="mb-6">
+        <Link href="/teacher" className="text-sm text-gray-400 hover:underline">← Back</Link>
+      </div>
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h1 className="text-2xl font-bold text-amber-600 mb-6">New Competition</h1>
           <form action={handleSubmit} className="flex flex-col gap-4">
@@ -93,8 +92,7 @@ export default function NewCompetitionPage() {
               {submitting ? 'Creating...' : 'Create Competition'}
             </button>
           </form>
-        </div>
       </div>
-    </main>
+    </div>
   )
 }
