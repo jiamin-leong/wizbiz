@@ -64,7 +64,7 @@ export default async function TeacherDashboard() {
                   }`}>
                     {c.status}
                   </span>
-                  <span className="text-gray-300 group-hover:text-amber-400 transition text-lg">→</span>
+                  <span className="text-gray-300 group-hover:text-amber-400 transition text-2xl font-black">→</span>
                 </div>
               </div>
               <div className="flex gap-6">
