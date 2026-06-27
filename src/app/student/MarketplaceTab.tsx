@@ -143,7 +143,7 @@ export default function MarketplaceTab({
     )
   }
 
-  // Marketplace grid
+  // Marketplace list
   if (listings.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400">
@@ -155,41 +155,42 @@ export default function MarketplaceTab({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {listings.map(l => (
-        <div key={l.id} className="bg-white rounded-2xl shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition">
-          <div>
-            <div className="flex justify-between items-start gap-2">
-              <h3 className="font-bold text-gray-800 text-base">{l.name}</h3>
-              <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
-                {l.groupName}
-              </span>
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-50">
+        {listings.map(l => (
+          <div key={l.id} className="flex items-center gap-3 px-4 py-3 hover:bg-amber-50 transition">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-gray-800 text-sm">{l.name}</span>
+                <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
+                  {l.groupName}
+                </span>
+              </div>
+              {l.description && (
+                <p className="text-xs text-gray-400 truncate mt-0.5">{l.description}</p>
+              )}
             </div>
-            {l.description && (
-              <p className="text-sm text-gray-500 mt-1">{l.description}</p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
-            <div>
-              <p className="text-xl font-extrabold text-amber-600">{l.price.toLocaleString()}</p>
-              <p className="text-xs text-gray-400">WizCoins · {l.quantity} left</p>
+            <div className="shrink-0 text-right">
+              <p className="text-sm font-extrabold text-amber-600">{l.price.toLocaleString()} WC</p>
+              <p className="text-xs text-gray-400">{l.quantity} left</p>
             </div>
-            {purchased.has(l.id) ? (
-              <span className="text-sm font-semibold text-green-500">✓ Bought!</span>
-            ) : (
-              <button
-                onClick={() => openBuy(l)}
-                disabled={balance < l.price}
-                className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
-                title={balance < l.price ? 'Not enough WizCoins' : ''}
-              >
-                Buy
-              </button>
-            )}
+            <div className="shrink-0">
+              {purchased.has(l.id) ? (
+                <span className="text-xs font-semibold text-green-500">✓ Bought</span>
+              ) : (
+                <button
+                  onClick={() => openBuy(l)}
+                  disabled={balance < l.price}
+                  className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={balance < l.price ? 'Not enough WizCoins' : ''}
+                >
+                  Buy
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
