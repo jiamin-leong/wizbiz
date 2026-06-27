@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth'
 import { db } from '@/db'
-import { competitions } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { competitions, groups, students } from '@/db/schema'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
@@ -14,6 +14,28 @@ export default async function TeacherDashboard() {
     .from(competitions)
     .where(eq(competitions.teacherId, session.id))
     .orderBy(competitions.createdAt)
+
+  const competitionIds = myCompetitions.map(c => c.id)
+
+  const [groupCounts, studentCounts] = competitionIds.length > 0 ? await Promise.all([
+    db.select({ competitionId: groups.competitionId, count: sql<number>`count(*)::int` })
+      .from(groups)
+      .where(inArray(groups.competitionId, competitionIds))
+      .groupBy(groups.competitionId),
+    db.select({ competitionId: groups.competitionId, count: sql<number>`count(students.id)::int` })
+      .from(groups)
+      .leftJoin(students, eq(students.groupId, groups.id))
+      .where(inArray(groups.competitionId, competitionIds))
+      .groupBy(groups.competitionId),
+  ]) : [[], []]
+
+  const groupCountMap = Object.fromEntries(groupCounts.map(r => [r.competitionId, r.count]))
+  const studentCountMap = Object.fromEntries(studentCounts.map(r => [r.competitionId, r.count]))
+
+  function duration(start: Date, end: Date) {
+    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    return days === 1 ? '1 day' : `${days} days`
+  }
 
   return (
     <div className="max-w-3xl">
@@ -32,19 +54,33 @@ export default async function TeacherDashboard() {
             <Link
               key={c.id}
               href={`/teacher/competitions/${c.id}`}
-              className="bg-white rounded-xl px-6 py-4 shadow-sm flex justify-between items-center hover:shadow-md transition"
+              className="bg-white rounded-xl px-6 py-5 shadow-sm hover:shadow-md transition"
             >
-              <div>
-                <p className="font-semibold text-gray-800">{c.name}</p>
-                <p className="text-sm text-gray-400">
-                  {new Date(c.startDate).toLocaleDateString()} → {new Date(c.endDate).toLocaleDateString()}
-                </p>
+              <div className="flex justify-between items-start mb-3">
+                <p className="text-lg font-bold text-gray-800">{c.name}</p>
+                <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                  c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {c.status}
+                </span>
               </div>
-              <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-              }`}>
-                {c.status}
-              </span>
+              <div className="flex gap-6">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Duration</p>
+                  <p className="text-base font-semibold text-gray-700">
+                    {new Date(c.startDate).toLocaleDateString()} → {new Date(c.endDate).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm text-amber-500">{duration(new Date(c.startDate), new Date(c.endDate))}</p>
+                </div>
+                <div className="border-l border-gray-100 pl-6">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Groups</p>
+                  <p className="text-2xl font-bold text-amber-600">{groupCountMap[c.id] ?? 0}</p>
+                </div>
+                <div className="border-l border-gray-100 pl-6">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Students</p>
+                  <p className="text-2xl font-bold text-amber-600">{studentCountMap[c.id] ?? 0}</p>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
