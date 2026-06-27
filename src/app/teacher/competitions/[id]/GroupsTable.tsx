@@ -14,10 +14,10 @@ type Group = {
 }
 
 function exportCSV(groups: Group[]) {
-  const rows = [['Group', 'Password', 'Login Code']]
+  const rows = [['Group', 'Password', 'WizCoins Balance', 'Login Code']]
   for (const g of groups) {
     for (const s of g.students) {
-      rows.push([g.name, g.groupPassword, s.loginCode])
+      rows.push([g.name, g.groupPassword, String(g.balance), s.loginCode])
     }
   }
   const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
