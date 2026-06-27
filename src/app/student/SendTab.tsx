@@ -26,12 +26,12 @@ export default function SendTab({
 
   async function handleSend() {
     if (!canSend || !selectedId) return
+    // Capture before any async gap
     const sentAmount = parsedAmount
     const sentToName = selected?.name ?? ''
     const sentToId = selectedId
     const sentMessage = message
 
-    // Instant update
     spend(sentAmount)
     setSuccess(`Sent ${sentAmount.toLocaleString()} WizCoins to ${sentToName}!`)
     setSelectedId(null)
@@ -48,11 +48,17 @@ export default function SendTab({
       createdAt: new Date(),
     })
 
-    const result = await sendWizCoins(sentToId, sentAmount, sentMessage)
-    if (result?.error) {
+    try {
+      const result = await sendWizCoins(sentToId, sentAmount, sentMessage)
+      if (result?.error) {
+        rollback(sentAmount)
+        setSuccess('')
+        setError(result.error)
+      }
+    } catch {
       rollback(sentAmount)
       setSuccess('')
-      setError(result.error)
+      setError('Something went wrong. Please try again.')
     }
   }
 

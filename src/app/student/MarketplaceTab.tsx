@@ -46,29 +46,35 @@ export default function MarketplaceTab({
 
   async function handleBuy() {
     if (!selected) return
+    // Capture before any async gap to avoid stale closure
+    const listing = selected
     setBuying(true)
     setError('')
-    const result = await buyListing(selected.id)
-    setBuying(false)
-
-    if (result?.error) {
-      setError(result.error)
-    } else {
-      spend(selected.price)
-      setPurchased(s => new Set(s).add(selected.id))
-      setListings(ls =>
-        ls.map(l => l.id === selected.id ? { ...l, quantity: l.quantity - 1 } : l)
-          .filter(l => l.quantity > 0)
-      )
-      onBought({
-        id: `buy-optimistic-${Date.now()}`,
-        type: 'bought',
-        description: selected.name,
-        otherGroup: selected.groupName,
-        amount: selected.price,
-        createdAt: new Date(),
-      })
-      closeBuy()
+    try {
+      const result = await buyListing(listing.id)
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        spend(listing.price)
+        setPurchased(s => new Set(s).add(listing.id))
+        setListings(ls =>
+          ls.map(l => l.id === listing.id ? { ...l, quantity: l.quantity - 1 } : l)
+            .filter(l => l.quantity > 0)
+        )
+        onBought({
+          id: `buy-optimistic-${Date.now()}`,
+          type: 'bought',
+          description: listing.name,
+          otherGroup: listing.groupName,
+          amount: listing.price,
+          createdAt: new Date(),
+        })
+        closeBuy()
+      }
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setBuying(false)
     }
   }
 
