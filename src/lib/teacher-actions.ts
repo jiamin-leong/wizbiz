@@ -63,6 +63,59 @@ export async function createCompetition(formData: FormData) {
   redirect(`/teacher/competitions/${competition.id}`)
 }
 
+export async function renameGroup(groupId: number, name: string) {
+  const session = await getSession()
+  if (!session || session.role !== 'teacher') redirect('/')
+  await db.update(groups).set({ name }).where(eq(groups.id, groupId))
+}
+
+export async function removeStudent(studentId: number) {
+  const session = await getSession()
+  if (!session || session.role !== 'teacher') redirect('/')
+  try {
+    await db.delete(students).where(eq(students.id, studentId))
+  } catch {
+    return { error: 'Cannot remove a student who has made transactions.' }
+  }
+}
+
+export async function addStudent(groupId: number) {
+  const session = await getSession()
+  if (!session || session.role !== 'teacher') redirect('/')
+
+  const [group] = await db.select().from(groups).where(eq(groups.id, groupId))
+  if (!group) return { error: 'Group not found' }
+
+  const existingStudents = await db
+    .select({ loginCode: students.loginCode })
+    .from(students)
+    .where(eq(students.groupId, groupId))
+
+  const existingCodes = new Set(existingStudents.map(s => s.loginCode))
+
+  // Infer theme from existing codes or fall back to group name
+  let themeName: string
+  if (existingStudents.length > 0) {
+    const themeUpper = existingStudents[0].loginCode.split('-')[0]
+    themeName = themeUpper[0] + themeUpper.slice(1).toLowerCase()
+  } else {
+    themeName = group.name
+  }
+
+  const items = GROUP_THEMES[themeName]
+  if (!items) return { error: 'Cannot determine theme for this group' }
+
+  const themeUpper = themeName.toUpperCase()
+  const unusedItem = items.find(item => !existingCodes.has(`${themeUpper}-${item}`))
+  if (!unusedItem) return { error: 'All slots are full for this group (maximum 20 participants)' }
+
+  await db.insert(students).values({
+    groupId,
+    loginCode: `${themeUpper}-${unusedItem}`,
+    passwordHash: group.groupPasswordHash,
+  })
+}
+
 export async function updateListingStatus(
   listingId: number,
   status: 'approved' | 'rejected',

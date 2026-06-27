@@ -4,8 +4,7 @@ import { competitions, groups, students, listings } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import ListingApprovalQueue from './ListingApprovalQueue'
-import GroupsTable from './GroupsTable'
+import CompetitionTabs from './CompetitionTabs'
 import AutoRefresh from './AutoRefresh'
 
 export default async function CompetitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -92,25 +91,13 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           </div>
         </div>
 
-        {/* Student Credentials */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Student Login Credentials</h2>
-          <GroupsTable groups={groupsWithStudents} initialBalance={competition.initialBalance} />
-          <AutoRefresh />
-        </section>
-
-        {/* Listing Approval Queue */}
-        <section>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">
-            Pending Listings
-            {filteredPending.length > 0 && (
-              <span className="ml-2 bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
-                {filteredPending.length}
-              </span>
-            )}
-          </h2>
-          <ListingApprovalQueue listings={filteredPending} groupNameMap={groupNameMap} />
-        </section>
+        <CompetitionTabs
+          groups={groupsWithStudents}
+          initialBalance={competition.initialBalance}
+          listings={filteredPending}
+          groupNameMap={groupNameMap}
+        />
+        <AutoRefresh />
     </div>
   )
 }
