@@ -5,7 +5,6 @@ import { eq, and, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ListingApprovalQueue from './ListingApprovalQueue'
-import PasswordReveal from './PasswordReveal'
 import AutoRefresh from './AutoRefresh'
 
 export default async function CompetitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -95,7 +94,6 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
         {/* Student Credentials */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-gray-700 mb-3">Student Login Credentials</h2>
-          <PasswordReveal password={competition.studentPassword} />
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -104,6 +102,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Group</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-16">Count</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-amber-600 uppercase tracking-wide w-36">WizCoins</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-36">Password</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Participants</th>
                 </tr>
               </thead>
@@ -113,6 +112,9 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
                     <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
                     <td className="px-4 py-3 font-semibold text-gray-700">{g.name}</td>
                     <td className="px-4 py-3 font-semibold text-gray-700">{g.students.length}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded">{g.groupPassword || '—'}</span>
+                    </td>
                     <td className="px-4 py-3">
                       <span className="font-bold text-amber-600">{g.balance.toLocaleString()}</span>
                       <span className="text-xs text-gray-400 ml-1">

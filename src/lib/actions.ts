@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/db'
-import { teachers, students } from '@/db/schema'
+import { teachers, students, groups } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { createSession, deleteSession } from '@/lib/auth'
@@ -26,18 +26,19 @@ export async function studentLogin(formData: FormData) {
   const password = formData.get('password') as string
 
   const [student] = await db
-    .select({ id: students.id, passwordHash: students.passwordHash, groupId: students.groupId })
+    .select({ id: students.id, groupId: students.groupId })
     .from(students)
     .where(eq(students.loginCode, loginCode.toUpperCase()))
 
   if (!student) return { error: 'Invalid credentials' }
 
-  const valid = await bcrypt.compare(password, student.passwordHash)
-  if (!valid) return { error: 'Invalid credentials' }
+  const [group] = await db
+    .select({ competitionId: groups.competitionId, groupPasswordHash: groups.groupPasswordHash })
+    .from(groups)
+    .where(eq(groups.id, student.groupId))
 
-  // Get competition id via group
-  const { groups } = await import('@/db/schema')
-  const [group] = await db.select({ competitionId: groups.competitionId }).from(groups).where(eq(groups.id, student.groupId))
+  const valid = await bcrypt.compare(password, group.groupPasswordHash)
+  if (!valid) return { error: 'Invalid credentials' }
 
   await createSession({ role: 'student', id: student.id, groupId: student.groupId, competitionId: group.competitionId })
   redirect('/student')

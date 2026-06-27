@@ -73,16 +73,8 @@ export default function NewCompetitionPage() {
                 className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Student Password</label>
-              <input
-                name="studentPassword"
-                type="text"
-                placeholder="Password you'll give to all students"
-                required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
-              <p className="text-xs text-gray-400 mt-1">All students in this competition will use this password to log in.</p>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
+              Each group will be automatically assigned a unique password (e.g. <span className="font-mono font-semibold">BLAZE-492</span>). You can find all group passwords on the competition page after creation.
             </div>
             <button
               type="submit"

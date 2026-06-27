@@ -18,7 +18,6 @@ export const competitions = pgTable('competitions', {
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date').notNull(),
   initialBalance: integer('initial_balance').notNull(),
-  studentPassword: text('student_password').notNull(),
   status: competitionStatusEnum('status').default('active').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -28,6 +27,8 @@ export const groups = pgTable('groups', {
   competitionId: integer('competition_id').references(() => competitions.id).notNull(),
   name: text('name').notNull(),
   balance: integer('balance').notNull(),
+  groupPassword: text('group_password').notNull().default(''),
+  groupPasswordHash: text('group_password_hash').notNull().default(''),
 })
 
 export const students = pgTable('students', {
