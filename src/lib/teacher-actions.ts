@@ -6,31 +6,7 @@ import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-
-const GROUP_THEMES: Record<string, string[]> = {
-  Fruits:    ['APPLE', 'MANGO', 'BERRY', 'GRAPE', 'LEMON'],
-  Animals:   ['TIGER', 'PANDA', 'EAGLE', 'SHARK', 'WOLF'],
-  People:    ['CHIEF', 'SCOUT', 'SAGE', 'HERO', 'ACE'],
-  Colors:    ['AMBER', 'CORAL', 'JADE', 'RUBY', 'ONYX'],
-  Sports:    ['SPRINT', 'VAULT', 'LUNGE', 'PIVOT', 'SURGE'],
-  Space:     ['COMET', 'NOVA', 'ORBIT', 'PULSAR', 'NEBULA'],
-  Ocean:     ['KELP', 'TIDE', 'DRIFT', 'WAVE', 'REEF'],
-  Weather:   ['STORM', 'FROST', 'BLAZE', 'GUST', 'MIST'],
-  Music:     ['CHORD', 'TEMPO', 'PITCH', 'RIFF', 'BEAT'],
-  Mountains: ['PEAK', 'RIDGE', 'CLIFF', 'VALE', 'CREST'],
-  Rivers:    ['BROOK', 'CREEK', 'DELTA', 'RAPID', 'FORD'],
-  Birds:     ['SWIFT', 'CRANE', 'FINCH', 'ROBIN', 'WREN'],
-  Planets:   ['MARS', 'VENUS', 'SATURN', 'PLUTO', 'LUNA'],
-  Flowers:   ['ROSE', 'LILY', 'IRIS', 'POPPY', 'DAISY'],
-  Food:      ['PASTA', 'CURRY', 'SUSHI', 'TACO', 'WAFFLE'],
-  Insects:   ['MOTH', 'WASP', 'BEETLE', 'CRICKET', 'ANT'],
-  Minerals:  ['QUARTZ', 'TOPAZ', 'GARNET', 'FLINT', 'OPAL'],
-  Vehicles:  ['ROCKET', 'KAYAK', 'GLIDER', 'BLIMP', 'TRAM'],
-  Countries: ['ATLAS', 'HAVEN', 'MESA', 'VALE', 'FORGE'],
-  Plants:    ['FERN', 'CACTUS', 'BONSAI', 'MOSS', 'VINE'],
-}
-
-const THEME_NAMES = Object.keys(GROUP_THEMES)
+import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5)
