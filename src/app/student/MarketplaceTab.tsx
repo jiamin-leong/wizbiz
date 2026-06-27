@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { buyListing } from '@/lib/student-actions'
 import { useBalance } from './BalanceContext'
 
@@ -21,7 +20,6 @@ export default function MarketplaceTab({
   listings: Listing[]
   onBought: (entry: { id: string; type: 'bought'; description: string; otherGroup: string; amount: number; createdAt: Date }) => void
 }) {
-  const router = useRouter()
   const { balance, spend } = useBalance()
   const [listings, setListings] = useState(initialListings)
   const [selected, setSelected] = useState<Listing | null>(null)
@@ -71,7 +69,6 @@ export default function MarketplaceTab({
         createdAt: new Date(),
       })
       closeBuy()
-      router.refresh()
     }
   }
 

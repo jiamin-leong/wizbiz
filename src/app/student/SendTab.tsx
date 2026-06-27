@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { sendWizCoins } from '@/lib/student-actions'
 import { useBalance } from './BalanceContext'
 
@@ -14,7 +13,6 @@ export default function SendTab({
   otherGroups: Group[]
   onSent: (entry: { id: string; type: 'sent'; description: string; otherGroup: string; amount: number; message?: string | null; createdAt: Date }) => void
 }) {
-  const router = useRouter()
   const { balance, spend, rollback } = useBalance()
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
@@ -55,8 +53,6 @@ export default function SendTab({
       rollback(sentAmount)
       setSuccess('')
       setError(result.error)
-    } else {
-      router.refresh()
     }
   }
 
@@ -67,7 +63,7 @@ export default function SendTab({
       <div>
         <p className="text-sm font-semibold text-gray-600 mb-2">Send to which group?</p>
         <div className="grid grid-cols-2 gap-2">
-          {otherGroups.map(g => (
+          {[...otherGroups].sort((a, b) => a.name.localeCompare(b.name)).map(g => (
             <button
               key={g.id}
               onClick={() => { setSelectedId(g.id); setError(''); setSuccess('') }}
