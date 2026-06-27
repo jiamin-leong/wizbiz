@@ -84,27 +84,36 @@ export default async function StudentDashboard() {
 
       <div className={`min-h-screen bg-amber-50 ${isPreview ? 'pt-12' : ''}`}>
         {/* Header */}
-        <header className="bg-white border-b border-amber-100 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div>
-              <span className="text-lg font-extrabold text-amber-600">WizBiz</span>
-              <span className="ml-2 text-xs text-gray-400 font-medium">{competition.name}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-xs text-gray-400 font-medium">{student?.loginCode} · {group.name}</p>
-                <p className="text-lg font-extrabold text-amber-600">{group.balance.toLocaleString()} WC</p>
-                <p className={`text-xs font-medium ${balanceChange >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-                  {balanceChange >= 0 ? `▲ ${balanceChange.toLocaleString()}` : `▼ ${Math.abs(balanceChange).toLocaleString()}`} from start
-                </p>
+        <header className="bg-amber-500 px-6 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <span className="text-sm font-bold text-amber-100 uppercase tracking-widest">WizBiz</span>
+                <p className="text-white font-semibold text-base mt-0.5">{competition.name}</p>
               </div>
               {!isPreview && (
                 <form action={logout}>
-                  <button className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg transition">
+                  <button className="text-sm text-amber-100 hover:text-white border border-amber-300 hover:border-white px-3 py-1.5 rounded-lg transition">
                     Logout
                   </button>
                 </form>
               )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+              <div>
+                <p className="text-amber-100 text-sm font-medium mb-1">You are</p>
+                <p className="text-white text-3xl font-extrabold tracking-wide">{student?.loginCode}</p>
+                <p className="text-amber-100 text-base font-semibold mt-1">{group.name} group</p>
+              </div>
+              <div className="sm:text-right">
+                <p className="text-amber-100 text-sm font-medium mb-1">Your balance</p>
+                <p className="text-white text-5xl font-extrabold">{group.balance.toLocaleString()}</p>
+                <p className="text-amber-100 text-base font-semibold mt-1">WizCoins</p>
+                <p className={`text-sm font-semibold mt-1 ${balanceChange >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                  {balanceChange >= 0 ? `▲ ${balanceChange.toLocaleString()}` : `▼ ${Math.abs(balanceChange).toLocaleString()}`} from start
+                </p>
+              </div>
             </div>
           </div>
         </header>
