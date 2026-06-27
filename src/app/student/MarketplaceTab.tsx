@@ -29,9 +29,9 @@ export default function MarketplaceTab({
   const [buying, setBuying] = useState(false)
   const [error, setError] = useState('')
   const [purchased, setPurchased] = useState<Set<number>>(new Set())
-  const [filterGroup, setFilterGroup] = useState<string | null>(null)
 
-  const groups = Array.from(new Set(listings.map(l => l.groupName))).sort()
+  const groups = Array.from(new Set(initialListings.map(l => l.groupName))).sort()
+  const [filterGroup, setFilterGroup] = useState<string | null>(groups[0] ?? null)
   const visibleListings = filterGroup ? listings.filter(l => l.groupName === filterGroup) : listings
 
   function openBuy(listing: Listing) {
