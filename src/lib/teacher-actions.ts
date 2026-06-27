@@ -20,7 +20,7 @@ export async function createCompetition(formData: FormData) {
 
   const [competition] = await db
     .insert(competitions)
-    .values({ teacherId: session.id, name, startDate, endDate, initialBalance, status: 'active' })
+    .values({ teacherId: session.id, name, startDate, endDate, initialBalance, studentPassword, status: 'active' })
     .returning()
 
   const passwordHash = await bcrypt.hash(studentPassword, 10)

@@ -1,9 +1,17 @@
 'use client'
 
 import { createCompetition } from '@/lib/teacher-actions'
+import { useState } from 'react'
 import Link from 'next/link'
 
 export default function NewCompetitionPage() {
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(formData: FormData) {
+    setSubmitting(true)
+    await createCompetition(formData)
+  }
+
   return (
     <main className="min-h-screen bg-amber-50 p-8">
       <div className="max-w-lg mx-auto">
@@ -12,7 +20,7 @@ export default function NewCompetitionPage() {
         </div>
         <div className="bg-white rounded-2xl shadow-md p-8">
           <h1 className="text-2xl font-bold text-amber-600 mb-6">New Competition</h1>
-          <form action={createCompetition} className="flex flex-col gap-4">
+          <form action={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Competition Name</label>
               <input
@@ -79,9 +87,10 @@ export default function NewCompetitionPage() {
             </div>
             <button
               type="submit"
-              className="bg-amber-500 text-white rounded-lg py-2 font-semibold hover:bg-amber-600 transition mt-2"
+              disabled={submitting}
+              className="bg-amber-500 text-white rounded-lg py-2 font-semibold hover:bg-amber-600 transition mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Competition
+              {submitting ? 'Creating...' : 'Create Competition'}
             </button>
           </form>
         </div>

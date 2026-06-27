@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth'
 import { db } from '@/db'
 import { competitions, groups, students, listings } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import ListingApprovalQueue from './ListingApprovalQueue'
@@ -24,36 +24,25 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
     .where(eq(groups.competitionId, competition.id))
     .orderBy(groups.id)
 
-  const groupsWithStudents = await Promise.all(
-    competitionGroups.map(async g => {
-      const groupStudents = await db
-        .select({ id: students.id, loginCode: students.loginCode })
-        .from(students)
-        .where(eq(students.groupId, g.id))
-        .orderBy(students.loginCode)
-      return { ...g, students: groupStudents }
-    })
-  )
-
-  const pendingListings = await db
-    .select({
-      id: listings.id,
-      name: listings.name,
-      description: listings.description,
-      price: listings.price,
-      quantity: listings.quantity,
-      groupId: listings.groupId,
-    })
-    .from(listings)
-    .where(and(
-      eq(listings.status, 'pending'),
-    ))
-    .orderBy(listings.createdAt)
-
-  // Filter to only listings in this competition's groups
-  const groupIds = new Set(competitionGroups.map(g => g.id))
-  const filteredPending = pendingListings.filter(l => groupIds.has(l.groupId))
+  const groupIds = competitionGroups.map(g => g.id)
   const groupNameMap = Object.fromEntries(competitionGroups.map(g => [g.id, g.name]))
+
+  // Single query for all students + pending listings in parallel
+  const [allStudents, filteredPending] = await Promise.all([
+    db.select({ id: students.id, loginCode: students.loginCode, groupId: students.groupId })
+      .from(students)
+      .where(inArray(students.groupId, groupIds))
+      .orderBy(students.loginCode),
+    db.select({ id: listings.id, name: listings.name, description: listings.description, price: listings.price, quantity: listings.quantity, groupId: listings.groupId })
+      .from(listings)
+      .where(and(eq(listings.status, 'pending'), inArray(listings.groupId, groupIds)))
+      .orderBy(listings.createdAt),
+  ])
+
+  const groupsWithStudents = competitionGroups.map(g => ({
+    ...g,
+    students: allStudents.filter(s => s.groupId === g.id),
+  }))
 
   return (
     <main className="min-h-screen bg-amber-50 p-8">
@@ -76,9 +65,17 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           </span>
         </div>
 
-        {/* Student Login Codes */}
+        {/* Student Credentials */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Student Login Codes</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-3">Student Login Credentials</h2>
+          <div className="bg-amber-100 border border-amber-300 rounded-xl p-4 mb-4 flex items-center gap-4">
+            <div>
+              <p className="text-xs text-amber-700 font-medium uppercase tracking-wide mb-1">Shared Password</p>
+              <p className="text-2xl font-bold font-mono text-amber-800">{competition.studentPassword}</p>
+            </div>
+            <p className="text-xs text-amber-600 ml-auto max-w-xs text-right">All students use this password. Share it with your class along with their login code.</p>
+          </div>
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">Login Codes by Group</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {groupsWithStudents.map(g => (
               <div key={g.id} className="bg-white rounded-xl shadow-sm p-4">

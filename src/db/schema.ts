@@ -18,6 +18,7 @@ export const competitions = pgTable('competitions', {
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date').notNull(),
   initialBalance: integer('initial_balance').notNull(),
+  studentPassword: text('student_password').notNull(),
   status: competitionStatusEnum('status').default('active').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
