@@ -2,7 +2,7 @@
 
 import { db } from '@/db'
 import { competitions, groups, students } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { getSession, createSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -62,6 +62,15 @@ export async function createCompetition(formData: FormData) {
   }
 
   redirect(`/teacher/competitions/${competition.id}`)
+}
+
+export async function updateCompetition(competitionId: number, name: string, startDate: string, endDate: string) {
+  const session = await getSession()
+  if (!session || session.role !== 'teacher') redirect('/')
+  await db
+    .update(competitions)
+    .set({ name, startDate: new Date(startDate), endDate: new Date(endDate) })
+    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
 }
 
 export async function previewAsStudent(groupId: number) {
