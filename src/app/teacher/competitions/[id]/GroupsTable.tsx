@@ -38,6 +38,7 @@ export default function GroupsTable({
   initialBalance: number
 }) {
   const router = useRouter()
+  const sortedGroups = [...groups].sort((a, b) => a.name.localeCompare(b.name))
   const [editing, setEditing] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [revealed, setRevealed] = useState<Record<number, boolean>>({})
@@ -81,7 +82,7 @@ export default function GroupsTable({
         <h2 className="text-lg font-semibold text-gray-700">Student Login Credentials</h2>
         <div className="flex gap-2">
           <button
-            onClick={() => exportCSV(groups)}
+            onClick={() => exportCSV(sortedGroups)}
             className="text-sm text-amber-600 border border-amber-300 hover:bg-amber-50 px-3 py-1.5 rounded-lg transition font-medium"
           >
             Export CSV
@@ -128,7 +129,7 @@ export default function GroupsTable({
             </tr>
           </thead>
           <tbody>
-            {groups.map((g, i) => (
+            {sortedGroups.map((g, i) => (
               <tr key={g.id} className={`border-b border-gray-50 last:border-0 align-top transition ${editing ? 'bg-amber-50/20' : 'hover:bg-amber-50/30'}`}>
                 <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
                 <td className="px-4 py-3">
