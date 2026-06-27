@@ -18,7 +18,6 @@ export default function SendTab({
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
-  const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -28,21 +27,26 @@ export default function SendTab({
 
   async function handleSend() {
     if (!canSend || !selectedId) return
-    setSending(true)
+    const sentAmount = parsedAmount
+    const sentToName = selected?.name ?? ''
+    const sentToId = selectedId
+    const sentMessage = message
+
+    // Optimistic update — instant, before the server call
+    setBalance(b => b - sentAmount)
+    setSuccess(`Sent ${sentAmount.toLocaleString()} WizCoins to ${sentToName}!`)
+    setSelectedId(null)
+    setAmount('')
+    setMessage('')
     setError('')
-    setSuccess('')
-    const result = await sendWizCoins(selectedId, parsedAmount, message)
-    setSending(false)
+
+    const result = await sendWizCoins(sentToId, sentAmount, sentMessage)
     if (result?.error) {
+      // Roll back
+      setBalance(b => b + sentAmount)
+      setSuccess('')
       setError(result.error)
     } else {
-      // Optimistic update — instant feedback
-      setBalance(b => b - parsedAmount)
-      setSuccess(`Sent ${parsedAmount.toLocaleString()} WizCoins to ${selected?.name}!`)
-      setSelectedId(null)
-      setAmount('')
-      setMessage('')
-      // Background sync
       router.refresh()
     }
   }
@@ -115,10 +119,10 @@ export default function SendTab({
 
       <button
         onClick={handleSend}
-        disabled={!canSend || sending}
+        disabled={!canSend}
         className="w-full bg-amber-500 hover:bg-amber-600 text-white text-lg font-extrabold py-4 rounded-2xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
       >
-        {sending ? 'Sending…' : '💸 Send WizCoins'}
+        💸 Send WizCoins
       </button>
     </div>
   )
