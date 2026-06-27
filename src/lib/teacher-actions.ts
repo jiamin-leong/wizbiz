@@ -4,7 +4,7 @@ import { db } from '@/db'
 import { competitions, groups, students } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
-import { getSession } from '@/lib/auth'
+import { getSession, createSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
 
@@ -61,6 +61,24 @@ export async function createCompetition(formData: FormData) {
   }
 
   redirect(`/teacher/competitions/${competition.id}`)
+}
+
+export async function previewAsStudent(groupId: number) {
+  const session = await getSession()
+  if (!session || session.role !== 'teacher') redirect('/')
+
+  const [group] = await db.select().from(groups).where(eq(groups.id, groupId))
+  if (!group) return { error: 'Group not found' }
+
+  const [firstStudent] = await db.select({ id: students.id }).from(students).where(eq(students.groupId, groupId))
+  if (!firstStudent) return { error: 'No students in this group yet' }
+
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  cookieStore.set('preview_teacher_id', String(session.id), { httpOnly: true, path: '/', sameSite: 'lax' })
+
+  await createSession({ role: 'student', id: firstStudent.id, groupId, competitionId: group.competitionId })
+  redirect('/student')
 }
 
 export async function renameGroup(groupId: number, name: string) {

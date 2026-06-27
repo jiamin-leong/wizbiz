@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { renameGroup, removeStudent, addStudent } from '@/lib/teacher-actions'
+import { renameGroup, removeStudent, addStudent, previewAsStudent } from '@/lib/teacher-actions'
 
 type Student = { id: number; loginCode: string; groupId: number }
 type Group = {
@@ -44,6 +44,7 @@ export default function GroupsTable({
   const [editingNameId, setEditingNameId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState('')
   const [adding, setAdding] = useState<Record<number, boolean>>({})
+  const [previewing, setPreviewing] = useState<number | null>(null)
 
   function isRevealed(id: number) {
     return showAll || !!revealed[id]
@@ -130,7 +131,7 @@ export default function GroupsTable({
             {groups.map((g, i) => (
               <tr key={g.id} className={`border-b border-gray-50 last:border-0 align-top transition ${editing ? 'bg-amber-50/20' : 'hover:bg-amber-50/30'}`}>
                 <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
-                <td className="px-4 py-3 font-semibold text-gray-700">
+                <td className="px-4 py-3">
                   {editing && editingNameId === g.id ? (
                     <input
                       autoFocus
@@ -141,12 +142,26 @@ export default function GroupsTable({
                       className="border border-amber-400 rounded px-2 py-0.5 text-sm w-28 focus:outline-none focus:ring-1 focus:ring-amber-400"
                     />
                   ) : (
-                    <span
-                      onClick={() => editing && (setEditingNameId(g.id), setEditingName(g.name))}
-                      className={editing ? 'cursor-pointer underline decoration-dashed decoration-amber-400 underline-offset-2 hover:text-amber-600 transition' : ''}
-                    >
-                      {g.name}
-                    </span>
+                    <div>
+                      <span
+                        onClick={() => editing && (setEditingNameId(g.id), setEditingName(g.name))}
+                        className={`font-semibold text-gray-700 block ${editing ? 'cursor-pointer underline decoration-dashed decoration-amber-400 underline-offset-2 hover:text-amber-600 transition' : ''}`}
+                      >
+                        {g.name}
+                      </span>
+                      {!editing && (
+                        <button
+                          onClick={async () => {
+                            setPreviewing(g.id)
+                            await previewAsStudent(g.id)
+                          }}
+                          disabled={previewing === g.id}
+                          className="text-xs text-amber-500 hover:text-amber-700 transition mt-0.5 disabled:opacity-50"
+                        >
+                          {previewing === g.id ? 'Loading…' : '👁 Preview'}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="px-4 py-3 font-semibold text-gray-700">{g.students.length}</td>
