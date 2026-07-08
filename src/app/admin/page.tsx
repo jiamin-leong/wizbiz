@@ -11,14 +11,14 @@ export default async function AdminPage() {
     .orderBy(desc(teachers.createdAt))
 
   return (
-    <div className="min-h-screen bg-amber-50">
-      <header className="bg-amber-500 text-white px-8 py-4 flex justify-between items-center">
+    <div className="min-h-screen bg-paper-2">
+      <header className="bg-orange text-white px-8 py-4 flex justify-between items-center">
         <div>
           <span className="text-xl font-extrabold">WizBiz</span>
-          <span className="ml-2 text-amber-100 text-sm font-medium uppercase tracking-widest">Admin</span>
+          <span className="ml-2 text-paper text-sm font-medium uppercase tracking-widest">Admin</span>
         </div>
         <form action={adminLogout}>
-          <button className="text-sm bg-white text-amber-600 hover:bg-amber-50 font-semibold px-3 py-1.5 rounded-lg transition">
+          <button className="text-sm bg-white text-orange hover:bg-paper-2 font-semibold px-3 py-1.5 rounded-lg transition">
             Logout
           </button>
         </form>
@@ -35,7 +35,7 @@ export default async function AdminPage() {
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-amber-50 border-b border-amber-100">
+                <tr className="bg-paper-2 border-b border-ink/10">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Created</th>

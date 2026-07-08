@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, pgEnum, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, integer, timestamp, pgEnum, numeric, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const listingStatusEnum = pgEnum('listing_status', ['pending', 'approved', 'rejected'])
 export const competitionStatusEnum = pgEnum('competition_status', ['active', 'ended'])
@@ -34,10 +34,12 @@ export const groups = pgTable('groups', {
 export const students = pgTable('students', {
   id: serial('id').primaryKey(),
   groupId: integer('group_id').references(() => groups.id).notNull(),
-  loginCode: text('login_code').notNull().unique(),
+  loginCode: text('login_code').notNull(),
   passwordHash: text('password_hash').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => [
+  uniqueIndex('students_group_login_code_idx').on(t.groupId, t.loginCode),
+])
 
 export const listings = pgTable('listings', {
   id: serial('id').primaryKey(),

@@ -37,7 +37,7 @@ export default function CreateTeacherForm() {
               type="text"
               placeholder="e.g. Ms Sarah Tan"
               required
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
             />
           </div>
           <div className="flex-1">
@@ -47,7 +47,7 @@ export default function CreateTeacherForm() {
               type="email"
               placeholder="sarah@school.edu"
               required
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
             />
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function CreateTeacherForm() {
             type="text"
             placeholder="They can change this later"
             required
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
           />
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -66,7 +66,7 @@ export default function CreateTeacherForm() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-amber-500 text-white rounded-lg py-2 font-semibold hover:bg-amber-600 transition disabled:opacity-50 mt-1"
+          className="bg-orange text-white rounded-lg py-2 font-semibold hover:bg-orange-dark transition disabled:opacity-50 mt-1"
         >
           {loading ? 'Creating…' : 'Create Account'}
         </button>

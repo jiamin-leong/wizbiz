@@ -91,7 +91,7 @@ export default function MarketplaceTab({
         <div className="bg-white rounded-2xl shadow-sm p-5">
           <div className="flex justify-between items-start gap-2 mb-2">
             <h2 className="text-xl font-extrabold text-gray-800">{selected.name}</h2>
-            <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-1 rounded-full shrink-0">
+            <span className="text-xs bg-paper-2 text-orange-dark font-semibold px-2.5 py-1 rounded-full shrink-0">
               {selected.groupName}
             </span>
           </div>
@@ -104,8 +104,8 @@ export default function MarketplaceTab({
         {/* Price */}
         <div>
           <p className="text-sm font-semibold text-gray-600 mb-2">Price</p>
-          <div className="bg-white rounded-xl border-2 border-amber-200 px-4 py-3 flex justify-between items-center">
-            <span className="text-3xl font-extrabold text-amber-600">{selected.price.toLocaleString()}</span>
+          <div className="bg-white rounded-xl border-2 border-ink/15 px-4 py-3 flex justify-between items-center">
+            <span className="text-3xl font-extrabold text-orange">{selected.price.toLocaleString()}</span>
             <span className="text-sm font-semibold text-gray-400">WizCoins</span>
           </div>
           <div className="flex justify-between mt-2 text-sm">
@@ -130,7 +130,7 @@ export default function MarketplaceTab({
             value={message}
             onChange={e => setMessage(e.target.value)}
             maxLength={100}
-            className="w-full bg-white border-2 border-gray-200 focus:border-amber-400 rounded-xl px-4 py-3 text-sm focus:outline-none"
+            className="w-full bg-white border-2 border-gray-200 focus:border-orange rounded-xl px-4 py-3 text-sm focus:outline-none"
           />
         </div>
 
@@ -139,7 +139,7 @@ export default function MarketplaceTab({
         <button
           onClick={handleBuy}
           disabled={buying || balance < selected.price}
-          className="w-full bg-amber-500 hover:bg-amber-600 text-white text-lg font-extrabold py-4 rounded-2xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+          className="w-full bg-orange hover:bg-orange-dark text-white text-lg font-extrabold py-4 rounded-2xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
         >
           {buying ? 'Buying…' : `Buy for ${selected.price.toLocaleString()} WC`}
         </button>
@@ -167,7 +167,7 @@ export default function MarketplaceTab({
         <button
           onClick={() => setFilterGroup(null)}
           className={`text-xs font-semibold px-3 py-1.5 rounded-full transition ${
-            filterGroup === null ? 'bg-amber-500 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-amber-300'
+            filterGroup === null ? 'bg-orange text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-ink/15'
           }`}
         >
           All
@@ -177,7 +177,7 @@ export default function MarketplaceTab({
             key={g}
             onClick={() => setFilterGroup(g === filterGroup ? null : g)}
             className={`text-xs font-semibold px-3 py-1.5 rounded-full transition ${
-              filterGroup === g ? 'bg-amber-500 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-amber-300'
+              filterGroup === g ? 'bg-orange text-white' : 'bg-white border border-gray-200 text-gray-500 hover:border-ink/15'
             }`}
           >
             {g}
@@ -188,11 +188,11 @@ export default function MarketplaceTab({
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-50">
         {visibleListings.map(l => (
-          <div key={l.id} className="flex items-center gap-3 px-4 py-3 hover:bg-amber-50 transition">
+          <div key={l.id} className="flex items-center gap-3 px-4 py-3 hover:bg-paper-2 transition">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-gray-800 text-sm">{l.name}</span>
-                <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-xs bg-paper-2 text-orange-dark font-semibold px-2 py-0.5 rounded-full shrink-0">
                   {l.groupName}
                 </span>
               </div>
@@ -201,7 +201,7 @@ export default function MarketplaceTab({
               )}
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-sm font-extrabold text-amber-600">{l.price.toLocaleString()} WC</p>
+              <p className="text-sm font-extrabold text-orange">{l.price.toLocaleString()} WC</p>
               <p className="text-xs text-gray-400">{l.quantity} left</p>
             </div>
             <div className="shrink-0">
@@ -211,7 +211,7 @@ export default function MarketplaceTab({
                 <button
                   onClick={() => openBuy(l)}
                   disabled={balance < l.price}
-                  className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="bg-orange hover:bg-orange-dark text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
                   title={balance < l.price ? 'Not enough WizCoins' : ''}
                 >
                   Buy

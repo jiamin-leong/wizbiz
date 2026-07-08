@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateCompetition } from '@/lib/teacher-actions'
+import { competitionStatus } from '@/lib/competition'
 
 function toDateInput(date: Date) {
   return new Date(date).toISOString().slice(0, 10)
@@ -55,23 +56,31 @@ export default function CompetitionHeader({
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => e.key === 'Escape' && setEditing(false)}
-            className="text-3xl font-extrabold text-gray-900 border-b-2 border-amber-400 focus:outline-none bg-transparent w-full mr-4"
+            className="text-3xl font-extrabold text-gray-900 border-b-2 border-orange focus:outline-none bg-transparent w-full mr-4"
           />
         ) : (
           <h1 className="text-3xl font-extrabold text-gray-900">{name}</h1>
         )}
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-            competition.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
-            {competition.status}
-          </span>
+          {(() => {
+            const status = competitionStatus(competition.startDate, competition.endDate)
+            const styles = {
+              upcoming: 'bg-teal/15 text-teal-dark',
+              active: 'bg-green-100 text-green-700',
+              ended: 'bg-gray-100 text-gray-500',
+            }[status]
+            return (
+              <span className={`text-xs font-semibold px-3 py-1 rounded-full ${styles}`}>
+                {status}
+              </span>
+            )
+          })()}
           {editing ? (
             <>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                className="text-sm font-semibold bg-orange hover:bg-orange-dark text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save'}
               </button>
@@ -85,7 +94,7 @@ export default function CompetitionHeader({
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="text-sm text-gray-500 hover:text-amber-600 border border-gray-200 hover:border-amber-300 px-3 py-1.5 rounded-lg transition"
+              className="text-sm text-gray-500 hover:text-orange border border-gray-200 hover:border-ink/15 px-3 py-1.5 rounded-lg transition"
             >
               ✏ Edit
             </button>
@@ -94,7 +103,7 @@ export default function CompetitionHeader({
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="col-span-2 sm:col-span-2 bg-amber-50 rounded-xl p-4">
+        <div className="col-span-2 sm:col-span-2 bg-paper-2 rounded-xl p-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Duration</p>
           {editing ? (
             <div className="flex items-center gap-2 mt-1">
@@ -102,14 +111,14 @@ export default function CompetitionHeader({
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="border border-amber-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                className="border border-ink/15 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal bg-white"
               />
               <span className="text-gray-400 text-sm">→</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="border border-amber-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400 bg-white"
+                className="border border-ink/15 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-teal bg-white"
               />
             </div>
           ) : (
@@ -117,25 +126,25 @@ export default function CompetitionHeader({
               <p className="text-base font-bold text-gray-800">
                 {new Date(competition.startDate).toLocaleDateString()} → {new Date(competition.endDate).toLocaleDateString()}
               </p>
-              <p className="text-sm text-amber-500 font-medium mt-0.5">{totalDays} days</p>
+              <p className="text-sm text-orange font-medium mt-0.5">{totalDays} days</p>
             </>
           )}
           {editing && previewDays > 0 && (
-            <p className="text-xs text-amber-500 mt-1">{previewDays} days</p>
+            <p className="text-xs text-orange mt-1">{previewDays} days</p>
           )}
         </div>
-        <div className="bg-amber-50 rounded-xl p-4">
+        <div className="bg-paper-2 rounded-xl p-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Groups</p>
-          <p className="text-3xl font-extrabold text-amber-600">{totalGroups}</p>
+          <p className="font-display text-3xl font-bold text-orange tabular-nums">{totalGroups}</p>
         </div>
-        <div className="bg-amber-50 rounded-xl p-4">
+        <div className="bg-paper-2 rounded-xl p-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Students</p>
-          <p className="text-3xl font-extrabold text-amber-600">{totalStudents}</p>
+          <p className="font-display text-3xl font-bold text-orange tabular-nums">{totalStudents}</p>
         </div>
-        <div className="bg-amber-50 rounded-xl p-4">
+        <div className="bg-paper-2 rounded-xl p-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Starting Balance</p>
-          <p className="text-xl font-extrabold text-amber-600">{competition.initialBalance.toLocaleString()}</p>
-          <p className="text-xs text-gray-400 mt-0.5">WizCoins</p>
+          <p className="font-display text-xl font-bold text-orange tabular-nums">{competition.initialBalance.toLocaleString()}</p>
+          <p className="text-[10px] font-pixel tracking-widest text-gray-400 mt-1">WIZCOINS</p>
         </div>
       </div>
     </div>

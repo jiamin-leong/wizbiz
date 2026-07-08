@@ -33,7 +33,7 @@ export default function StudentTabs({
   const tabClass = (t: string) =>
     `px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
       tab === t
-        ? 'border-amber-500 text-amber-600'
+        ? 'border-orange text-orange'
         : 'border-transparent text-gray-500 hover:text-gray-700'
     }`
 

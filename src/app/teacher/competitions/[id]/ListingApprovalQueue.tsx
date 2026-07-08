@@ -64,7 +64,7 @@ export default function ListingApprovalQueue({
         <div key={l.id} className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <span className="text-xs text-amber-600 font-medium">{groupNameMap[l.groupId]}</span>
+              <span className="text-xs text-orange font-medium">{groupNameMap[l.groupId]}</span>
               {editing === l.id ? (
                 <div className="flex flex-col gap-2 mt-1">
                   <input
@@ -89,7 +89,7 @@ export default function ListingApprovalQueue({
                 <>
                   <p className="font-semibold text-gray-800">{l.name}</p>
                   {l.description && <p className="text-sm text-gray-500">{l.description}</p>}
-                  <p className="text-sm text-amber-600 font-medium mt-1">{l.price} WizCoins · Qty: {l.quantity}</p>
+                  <p className="text-sm text-orange font-medium mt-1">{l.price} WizCoins · Qty: {l.quantity}</p>
                 </>
               )}
             </div>

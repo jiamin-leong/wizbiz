@@ -75,12 +75,12 @@ export default function SendTab({
               onClick={() => { setSelectedId(g.id); setError(''); setSuccess('') }}
               className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 text-left transition ${
                 selectedId === g.id
-                  ? 'border-amber-500 bg-amber-50'
-                  : 'border-gray-200 bg-white hover:border-amber-300'
+                  ? 'border-orange bg-paper-2'
+                  : 'border-gray-200 bg-white hover:border-ink/15'
               }`}
             >
               <span className="font-semibold text-gray-800 text-sm">{g.name}</span>
-              {selectedId === g.id && <span className="text-amber-500 text-lg">✓</span>}
+              {selectedId === g.id && <span className="text-orange text-lg">✓</span>}
             </button>
           ))}
         </div>
@@ -97,7 +97,7 @@ export default function SendTab({
             value={amount}
             onChange={e => { setAmount(e.target.value); setError(''); setSuccess('') }}
             placeholder="e.g. 500"
-            className="w-full bg-white border-2 border-gray-200 focus:border-amber-400 rounded-xl px-4 py-3 text-2xl font-bold text-amber-600 focus:outline-none"
+            className="w-full bg-white border-2 border-gray-200 focus:border-orange rounded-xl px-4 py-3 text-2xl font-bold text-orange focus:outline-none"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">WC</span>
         </div>
@@ -113,13 +113,13 @@ export default function SendTab({
           onChange={e => setMessage(e.target.value)}
           placeholder="e.g. Payment for cookies 🍪"
           maxLength={100}
-          className="w-full bg-white border-2 border-gray-200 focus:border-amber-400 rounded-xl px-4 py-3 text-sm focus:outline-none"
+          className="w-full bg-white border-2 border-gray-200 focus:border-orange rounded-xl px-4 py-3 text-sm focus:outline-none"
         />
       </div>
 
       {/* Summary + Send */}
       {selected && parsedAmount > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+        <div className="bg-paper-2 border border-ink/15 rounded-xl px-4 py-3 text-sm text-orange-dark">
           Sending <span className="font-bold">{parsedAmount.toLocaleString()} WizCoins</span> to <span className="font-bold">{selected.name}</span>
           {message && <> with message: "<em>{message}</em>"</>}
         </div>
@@ -131,7 +131,7 @@ export default function SendTab({
       <button
         onClick={handleSend}
         disabled={!canSend}
-        className="w-full bg-amber-500 hover:bg-amber-600 text-white text-lg font-extrabold py-4 rounded-2xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+        className="w-full bg-orange hover:bg-orange-dark text-white text-lg font-extrabold py-4 rounded-2xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
       >
         💸 Send WizCoins
       </button>

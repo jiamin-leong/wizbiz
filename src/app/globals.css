@@ -1,26 +1,149 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Chrome Modern — Y2K meets Mid-Century */
+  --paper: #ece4d2;      /* warm oatmeal ground */
+  --paper-2: #f4efe2;    /* raised surface */
+  --ink: #181826;        /* deep blue-black */
+  --ink-soft: #4a4a5c;   /* muted body ink */
+  --orange: #e8722b;     /* mid-century bold accent */
+  --orange-dark: #c85d1c;
+  --teal: #1f8a80;       /* modernist counter-accent + grid */
+  --teal-dark: #166b63;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-orange: var(--orange);
+  --color-orange-dark: var(--orange-dark);
+  --color-teal: var(--teal);
+  --color-teal-dark: var(--teal-dark);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-pixel: var(--font-pixel);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Clean modernist card: white surface, ink hairline, soft bevel */
+.card {
+  background: #fff;
+  border: 1.5px solid rgba(24, 24, 38, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 24px rgba(24, 24, 38, 0.08);
+}
+
+/* ── Matrix grid: faint teal graph-paper, mid-century meets Y2K ── */
+.grid-bg {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(31, 138, 128, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 138, 128, 0.09) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* ── Chrome text: brushed-metal wordmark ── */
+.chrome-text {
+  background: linear-gradient(
+    175deg,
+    #f7f8fa 0%,
+    #c7cbd1 22%,
+    #9aa0a8 42%,
+    #eef0f3 52%,
+    #b4bac2 70%,
+    #7f858d 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 1.25px var(--ink);
+  filter: drop-shadow(0 2px 0 rgba(24, 24, 38, 0.28));
+}
+
+/* ── Chrome text on dark surfaces: bright, no dark stroke ── */
+.chrome-text-dark {
+  background: linear-gradient(175deg, #ffffff 0%, #e7eaef 38%, #ffffff 54%, #c4cad2 78%, #eef1f4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
+}
+
+/* ── Iridescent sheen sweep (holographic) ── */
+.iridescent {
+  background: linear-gradient(110deg, #b8a5ff, #7fe9e1, #ffb3d9, #b8a5ff);
+  background-size: 300% 100%;
+  animation: iri 8s linear infinite;
+}
+@keyframes iri {
+  to { background-position: 300% 0; }
+}
+
+/* ── Beveled buttons with chrome edge ── */
+.btn-metal {
+  position: relative;
+  border-radius: 9999px;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1.5px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn-metal:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--ink);
+}
+.btn-orange {
+  background: linear-gradient(180deg, #f28a44 0%, var(--orange) 55%, var(--orange-dark) 100%);
+  color: #fff;
+}
+.btn-chrome {
+  background: linear-gradient(180deg, #fbfcfd 0%, #d5d9de 48%, #aeb4bc 52%, #e9ebee 100%);
+  color: var(--ink);
+}
+
+/* ── WizCoin token: chrome disc with iridescent rim ── */
+.coin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: conic-gradient(from 210deg, #e9ebee, #aeb4bc, #f4f6f8, #9aa0a8, #e9ebee);
+  border: 3px solid var(--ink);
+  box-shadow:
+    inset 0 3px 6px rgba(255, 255, 255, 0.8),
+    inset 0 -6px 12px rgba(24, 24, 38, 0.25),
+    0 10px 24px rgba(24, 24, 38, 0.22);
+}
+.coin::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  background: linear-gradient(120deg, #b8a5ff, #7fe9e1, #ffb3d9, #b8a5ff);
+  background-size: 300% 100%;
+  animation: iri 6s linear infinite;
+  z-index: -1;
+  filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iridescent, .coin::before { animation: none; }
 }
