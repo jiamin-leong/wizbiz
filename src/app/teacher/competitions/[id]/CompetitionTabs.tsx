@@ -34,13 +34,13 @@ export default function CompetitionTabs({
       <div className="flex gap-1 border-b border-gray-200 mb-6">
         <button
           onClick={() => setTab('groups')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${tab === 'groups' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${tab === 'groups' ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           Groups
         </button>
         <button
           onClick={() => setTab('marketplace')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition flex items-center gap-1.5 ${tab === 'marketplace' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition flex items-center gap-1.5 ${tab === 'marketplace' ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           Marketplace
           {listings.length > 0 && (
@@ -51,7 +51,7 @@ export default function CompetitionTabs({
         </button>
         <button
           onClick={() => setTab('settings')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${tab === 'settings' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${tab === 'settings' ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           Settings
         </button>

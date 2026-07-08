@@ -76,12 +76,12 @@ export default function CoOrganizers({
               onChange={e => { setEmail(e.target.value); setError('') }}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               placeholder="teacher@school.com"
-              className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
             />
             <button
               onClick={handleAdd}
               disabled={adding || !email.trim()}
-              className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
+              className="bg-orange hover:bg-orange-dark text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
             >
               {adding ? 'Adding…' : 'Add'}
             </button>

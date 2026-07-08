@@ -44,7 +44,7 @@ export default async function TeacherDashboard() {
       {myCompetitions.length === 0 ? (
         <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm">
           No competitions yet.{' '}
-          <Link href="/teacher/competitions/new" className="text-amber-500 hover:underline font-medium">
+          <Link href="/teacher/competitions/new" className="text-orange hover:underline font-medium">
             Create your first one
           </Link>
         </div>
@@ -54,17 +54,17 @@ export default async function TeacherDashboard() {
             <Link
               key={c.id}
               href={`/teacher/competitions/${c.id}`}
-              className="bg-white rounded-xl px-6 py-5 shadow-sm hover:shadow-md hover:border-amber-300 border border-transparent transition cursor-pointer group"
+              className="bg-white rounded-xl px-6 py-5 shadow-sm hover:shadow-md hover:border-ink/15 border border-transparent transition cursor-pointer group"
             >
               <div className="flex justify-between items-start mb-3">
-                <p className="text-2xl font-extrabold text-gray-900 group-hover:text-amber-600 transition">{c.name}</p>
+                <p className="text-2xl font-extrabold text-gray-900 group-hover:text-orange transition">{c.name}</p>
                 <div className="flex items-center gap-2 shrink-0 ml-4">
                   <span className={`text-xs font-medium px-3 py-1 rounded-full ${
                     c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                   }`}>
                     {c.status}
                   </span>
-                  <span className="text-gray-300 group-hover:text-amber-400 transition text-2xl font-black">→</span>
+                  <span className="text-gray-300 group-hover:text-orange transition text-2xl font-black">→</span>
                 </div>
               </div>
               <div className="flex gap-6">
@@ -73,15 +73,15 @@ export default async function TeacherDashboard() {
                   <p className="text-base font-semibold text-gray-700">
                     {new Date(c.startDate).toLocaleDateString()} → {new Date(c.endDate).toLocaleDateString()}
                   </p>
-                  <p className="text-sm text-amber-500">{duration(new Date(c.startDate), new Date(c.endDate))}</p>
+                  <p className="text-sm text-orange">{duration(new Date(c.startDate), new Date(c.endDate))}</p>
                 </div>
                 <div className="border-l border-gray-100 pl-6">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Groups</p>
-                  <p className="text-2xl font-bold text-amber-600">{groupCountMap[c.id] ?? 0}</p>
+                  <p className="font-display text-2xl font-bold text-orange tabular-nums">{groupCountMap[c.id] ?? 0}</p>
                 </div>
                 <div className="border-l border-gray-100 pl-6">
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Students</p>
-                  <p className="text-2xl font-bold text-amber-600">{studentCountMap[c.id] ?? 0}</p>
+                  <p className="font-display text-2xl font-bold text-orange tabular-nums">{studentCountMap[c.id] ?? 0}</p>
                 </div>
               </div>
             </Link>

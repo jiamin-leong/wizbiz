@@ -18,7 +18,7 @@ export default function NewCompetitionPage() {
         <Link href="/teacher" className="text-sm text-gray-400 hover:underline">← Back</Link>
       </div>
         <div className="bg-white rounded-2xl shadow-md p-8">
-          <h1 className="text-2xl font-bold text-amber-600 mb-6">New Competition</h1>
+          <h1 className="text-2xl font-bold text-orange mb-6">New Competition</h1>
           <form action={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Competition Name</label>
@@ -27,7 +27,7 @@ export default function NewCompetitionPage() {
                 type="text"
                 placeholder="e.g. Term 2 Market Day"
                 required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
               />
             </div>
             <div className="flex gap-3">
@@ -37,7 +37,7 @@ export default function NewCompetitionPage() {
                   name="startDate"
                   type="date"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
                 />
               </div>
               <div className="flex-1">
@@ -46,7 +46,7 @@ export default function NewCompetitionPage() {
                   name="endDate"
                   type="date"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
                 />
               </div>
             </div>
@@ -58,7 +58,7 @@ export default function NewCompetitionPage() {
                 placeholder="e.g. 1000"
                 min="1"
                 required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
               />
             </div>
             <div className="flex gap-3">
@@ -71,7 +71,7 @@ export default function NewCompetitionPage() {
                   min="2"
                   max="20"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
                 />
               </div>
               <div className="flex-1">
@@ -83,17 +83,17 @@ export default function NewCompetitionPage() {
                   min="1"
                   max="20"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
                 />
               </div>
             </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">
-              Each group will be automatically assigned a unique password (e.g. <span className="font-mono font-semibold">BLAZE-492</span>). You can find all group passwords on the competition page after creation.
+            <div className="bg-paper-2 border border-ink/15 rounded-lg px-4 py-3 text-sm text-orange-dark">
+              Each group will be automatically assigned a unique password (e.g. <span className="font-pixel text-xs">BLAZE-492</span>). You can find all group passwords on the competition page after creation.
             </div>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-amber-500 text-white rounded-lg py-2 font-semibold hover:bg-amber-600 transition mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-metal btn-orange py-2.5 text-sm mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Creating...' : 'Create Competition'}
             </button>

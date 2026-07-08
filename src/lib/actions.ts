@@ -2,7 +2,7 @@
 
 import { db } from '@/db'
 import { teachers, students, groups } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { createSession, deleteSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -25,23 +25,24 @@ export async function teacherLogin(formData: FormData) {
 export async function studentLogin(formData: FormData) {
   const loginCode = formData.get('loginCode') as string
   const password = formData.get('password') as string
+  const competitionId = parseInt(formData.get('competitionId') as string)
 
+  if (!competitionId) return { error: 'Please select a competition' }
+
+  // Login codes are only unique per group; scoping to the chosen competition
+  // makes (competition, loginCode) uniquely identify the student.
   const [student] = await db
-    .select({ id: students.id, groupId: students.groupId })
+    .select({ id: students.id, groupId: students.groupId, groupPasswordHash: groups.groupPasswordHash })
     .from(students)
-    .where(eq(students.loginCode, loginCode.toUpperCase()))
+    .innerJoin(groups, eq(students.groupId, groups.id))
+    .where(and(eq(students.loginCode, loginCode.toUpperCase()), eq(groups.competitionId, competitionId)))
 
   if (!student) return { error: 'Invalid credentials' }
 
-  const [group] = await db
-    .select({ competitionId: groups.competitionId, groupPasswordHash: groups.groupPasswordHash })
-    .from(groups)
-    .where(eq(groups.id, student.groupId))
-
-  const valid = await bcrypt.compare(password, group.groupPasswordHash)
+  const valid = await bcrypt.compare(password, student.groupPasswordHash)
   if (!valid) return { error: 'Invalid credentials' }
 
-  await createSession({ role: 'student', id: student.id, groupId: student.groupId, competitionId: group.competitionId })
+  await createSession({ role: 'student', id: student.id, groupId: student.groupId, competitionId })
   redirect('/student')
 }
 

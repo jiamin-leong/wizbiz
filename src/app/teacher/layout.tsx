@@ -37,12 +37,12 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const past = allCompetitions.filter(c => c.status === 'ended')
 
   return (
-    <div className="min-h-screen bg-amber-50 flex">
+    <div className="min-h-screen bg-paper-2 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-amber-100 flex flex-col shrink-0">
-        <div className="px-6 py-6 border-b border-amber-100 bg-amber-500">
-          <span className="text-2xl font-extrabold text-white tracking-tight">WizBiz</span>
-          <p className="text-xs font-semibold text-amber-100 uppercase tracking-widest mt-0.5">Teacher Portal</p>
+      <aside className="w-64 bg-white border-r border-ink/10 flex flex-col shrink-0">
+        <div className="px-6 py-6 border-b border-ink/10 bg-ink">
+          <span className="chrome-text-dark text-2xl" style={{ fontWeight: 700 }}>WizBiz</span>
+          <p className="text-[10px] font-semibold text-paper/70 uppercase tracking-widest mt-1 font-pixel">Teacher Portal</p>
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
@@ -57,7 +57,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
                   <Link
                     key={c.id}
                     href={`/teacher/competitions/${c.id}`}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition truncate"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-paper-2 hover:text-orange-dark transition truncate"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
                     <span className="truncate">{c.name}</span>
@@ -89,7 +89,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           {/* New competition */}
           <Link
             href="/teacher/competitions/new"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-amber-600 hover:bg-amber-50 transition font-medium border border-dashed border-amber-300 hover:border-amber-400"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-orange hover:bg-paper-2 transition font-medium border border-dashed border-ink/15 hover:border-orange"
           >
             <span>＋</span> New Competition
           </Link>
@@ -113,7 +113,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="grid-bg flex-1 p-8 overflow-auto">
         {children}
       </main>
     </div>
