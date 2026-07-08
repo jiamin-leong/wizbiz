@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateCompetition } from '@/lib/teacher-actions'
+import { competitionStatus } from '@/lib/competition'
 
 function toDateInput(date: Date) {
   return new Date(date).toISOString().slice(0, 10)
@@ -61,11 +62,19 @@ export default function CompetitionHeader({
           <h1 className="text-3xl font-extrabold text-gray-900">{name}</h1>
         )}
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-            competition.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
-            {competition.status}
-          </span>
+          {(() => {
+            const status = competitionStatus(competition.startDate, competition.endDate)
+            const styles = {
+              upcoming: 'bg-teal/15 text-teal-dark',
+              active: 'bg-green-100 text-green-700',
+              ended: 'bg-gray-100 text-gray-500',
+            }[status]
+            return (
+              <span className={`text-xs font-semibold px-3 py-1 rounded-full ${styles}`}>
+                {status}
+              </span>
+            )
+          })()}
           {editing ? (
             <>
               <button

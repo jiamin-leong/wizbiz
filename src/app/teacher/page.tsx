@@ -4,6 +4,7 @@ import { competitions, groups, students } from '@/db/schema'
 import { eq, inArray, sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { competitionStatus } from '@/lib/competition'
 
 export default async function TeacherDashboard() {
   const session = await getSession()
@@ -59,11 +60,19 @@ export default async function TeacherDashboard() {
               <div className="flex justify-between items-start mb-3">
                 <p className="text-2xl font-extrabold text-gray-900 group-hover:text-orange transition">{c.name}</p>
                 <div className="flex items-center gap-2 shrink-0 ml-4">
-                  <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                    c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {c.status}
-                  </span>
+                  {(() => {
+                    const status = competitionStatus(c.startDate, c.endDate)
+                    const styles = {
+                      upcoming: 'bg-teal/15 text-teal-dark',
+                      active: 'bg-green-100 text-green-700',
+                      ended: 'bg-gray-100 text-gray-500',
+                    }[status]
+                    return (
+                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${styles}`}>
+                        {status}
+                      </span>
+                    )
+                  })()}
                   <span className="text-gray-300 group-hover:text-orange transition text-2xl font-black">→</span>
                 </div>
               </div>

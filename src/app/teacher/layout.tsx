@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { db } from '@/db'
 import { teachers, competitions, competitionOrganizers } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
+import { competitionStatus } from '@/lib/competition'
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -15,11 +16,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       .from(teachers)
       .where(eq(teachers.id, session.id))
       .then(r => r[0]),
-    db.select({ id: competitions.id, name: competitions.name, status: competitions.status })
+    db.select({ id: competitions.id, name: competitions.name, startDate: competitions.startDate, endDate: competitions.endDate })
       .from(competitions)
       .where(eq(competitions.teacherId, session.id))
       .orderBy(desc(competitions.createdAt)),
-    db.select({ id: competitions.id, name: competitions.name, status: competitions.status })
+    db.select({ id: competitions.id, name: competitions.name, startDate: competitions.startDate, endDate: competitions.endDate })
       .from(competitionOrganizers)
       .innerJoin(competitions, eq(competitions.id, competitionOrganizers.competitionId))
       .where(eq(competitionOrganizers.teacherId, session.id))
@@ -33,8 +34,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     return true
   })
 
-  const active = allCompetitions.filter(c => c.status === 'active')
-  const past = allCompetitions.filter(c => c.status === 'ended')
+  const upcoming = allCompetitions.filter(c => competitionStatus(c.startDate, c.endDate) === 'upcoming')
+  const active = allCompetitions.filter(c => competitionStatus(c.startDate, c.endDate) === 'active')
+  const past = allCompetitions.filter(c => competitionStatus(c.startDate, c.endDate) === 'ended')
 
   return (
     <div className="min-h-screen bg-paper-2 flex">
@@ -46,6 +48,25 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
+          {/* Upcoming competitions */}
+          {upcoming.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Upcoming</p>
+              <div className="flex flex-col gap-0.5">
+                {upcoming.map(c => (
+                  <Link
+                    key={c.id}
+                    href={`/teacher/competitions/${c.id}`}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-paper-2 hover:text-teal-dark transition truncate"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal shrink-0" />
+                    <span className="truncate">{c.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Active competitions */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Active</p>
