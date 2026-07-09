@@ -106,8 +106,9 @@ export default function GroupsTable({
         </p>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+      {/* Desktop: table */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-x-auto">
+        <table className="w-full min-w-[780px] text-sm">
           <thead>
             <tr className="bg-paper-2 border-b border-ink/10">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-10">#</th>
@@ -218,6 +219,103 @@ export default function GroupsTable({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile: stacked cards */}
+      <div className="md:hidden flex flex-col gap-3">
+        <div className="flex justify-end">
+          <button
+            onClick={() => { setShowAll(s => !s); setRevealed({}) }}
+            className="text-xs text-orange font-medium"
+          >
+            {showAll ? 'Hide all passwords' : 'Show all passwords'}
+          </button>
+        </div>
+
+        {sortedGroups.map(g => (
+          <div key={g.id} className="bg-white rounded-xl shadow-sm p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                {editing && editingNameId === g.id ? (
+                  <input
+                    autoFocus
+                    value={editingName}
+                    onChange={e => setEditingName(e.target.value)}
+                    onBlur={() => handleRename(g.id)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleRename(g.id); if (e.key === 'Escape') setEditingNameId(null) }}
+                    className="border border-orange rounded px-2 py-0.5 text-base w-full max-w-[12rem] focus:outline-none focus:ring-1 focus:ring-teal"
+                  />
+                ) : (
+                  <span
+                    onClick={() => editing && (setEditingNameId(g.id), setEditingName(g.name))}
+                    className={`font-semibold text-gray-800 text-base block truncate ${editing ? 'cursor-pointer underline decoration-dashed decoration-orange underline-offset-2' : ''}`}
+                  >
+                    {g.name}
+                  </span>
+                )}
+                <p className="text-xs text-gray-400 mt-0.5">{g.students.length} participants</p>
+              </div>
+              {!editing && (
+                <button
+                  onClick={async () => { setPreviewing(g.id); await previewAsStudent(g.id) }}
+                  disabled={previewing === g.id}
+                  className="shrink-0 text-xs text-orange hover:text-orange-dark transition disabled:opacity-50"
+                >
+                  {previewing === g.id ? 'Loading…' : '🔍 Preview'}
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+              <div className="flex items-center gap-1.5">
+                <span className="font-pixel text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                  {isRevealed(g.id) ? g.groupPassword || '—' : '••••••••'}
+                </span>
+                <button
+                  onClick={() => toggleReveal(g.id)}
+                  className="text-xs text-gray-400 hover:text-orange transition"
+                >
+                  {isRevealed(g.id) ? 'hide' : 'show'}
+                </button>
+              </div>
+              <div className="text-sm">
+                <span className="font-bold text-orange">{g.balance.toLocaleString()}</span>
+                <span className="text-gray-400"> WizCoins</span>
+                <span className="ml-1 text-xs">
+                  {g.balance >= initialBalance
+                    ? <span className="text-green-500">▲ {(g.balance - initialBalance).toLocaleString()}</span>
+                    : <span className="text-red-400">▼ {(initialBalance - g.balance).toLocaleString()}</span>}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 items-center mt-3">
+              {g.students.map(s => (
+                <span key={s.id} className="flex items-center gap-1 bg-paper-2 text-orange-dark text-xs font-pixel px-2.5 py-1 rounded-full">
+                  {s.loginCode}
+                  {editing && (
+                    <button
+                      onClick={() => handleRemove(s.id)}
+                      className="text-orange hover:text-red-500 transition leading-none font-bold"
+                      title="Remove participant"
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
+              ))}
+              {editing && (
+                <button
+                  onClick={() => handleAdd(g.id)}
+                  disabled={!!adding[g.id]}
+                  className="text-xs text-orange bg-paper-2 border border-ink/15 px-2.5 py-1 rounded-full transition font-medium disabled:opacity-50"
+                >
+                  {adding[g.id] ? '...' : '+ Add'}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
