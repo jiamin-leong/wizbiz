@@ -74,7 +74,7 @@ export default function ClaimClassButton({
         disabled={busy}
         className="text-sm font-semibold text-orange border border-orange/40 bg-white hover:bg-orange hover:text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50"
       >
-        {busy ? 'Claiming…' : 'Claim this class'}
+        {busy ? 'Claiming…' : 'Claim for me'}
       </button>
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>

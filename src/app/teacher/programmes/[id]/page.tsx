@@ -178,19 +178,15 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {access.isOwner ? (
-                      <ClassTeacherField
-                        classId={klass.id}
-                        currentTeacherId={klass.teacherId}
-                        teachers={teacherRows}
-                      />
-                    ) : (klass.teacherId === null || klass.teacherId === session.id) && (
-                      <ClaimClassButton
-                        classId={klass.id}
-                        className={klass.name}
-                        mine={klass.teacherId === session.id}
-                      />
+                    {/* One click to take a free class; the dropdown does the rest. */}
+                    {klass.teacherId === null && (
+                      <ClaimClassButton classId={klass.id} className={klass.name} mine={false} />
                     )}
+                    <ClassTeacherField
+                      classId={klass.id}
+                      currentTeacherId={klass.teacherId}
+                      teachers={teacherRows}
+                    />
                     {comp && (access.isOwner || klass.teacherId === session.id) && (
                       <Link
                         href={`/teacher/competitions/${comp.id}`}

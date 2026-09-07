@@ -141,8 +141,10 @@ export async function assignClassTeacher(classId: number, teacherId: number | nu
     .where(eq(classes.id, classId))
   if (!klass) return { error: 'Class not found' }
 
+  // Any approved teacher can assign a class, not just the programme owner —
+  // staffing gets sorted out between colleagues rather than through one person.
   const access = await getProgrammeAccess(klass.programmeId, session.id)
-  if (!access?.isOwner) return { error: 'Only the programme owner can assign class teachers.' }
+  if (!access) return { error: 'Your account cannot manage this programme.' }
 
   if (teacherId === null) {
     await db.update(classes).set({ teacherId: null }).where(eq(classes.id, classId))
