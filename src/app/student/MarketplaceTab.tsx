@@ -20,7 +20,7 @@ export default function MarketplaceTab({
   listings: Listing[]
   onBought: (entry: { id: string; type: 'bought'; description: string; otherGroup: string; amount: number; createdAt: Date }) => void
 }) {
-  const { balance, spend } = useBalance()
+  const { personal: balance, spend } = useBalance()
   const [listings, setListings] = useState(initialListings)
   const [selected, setSelected] = useState<Listing | null>(null)
   const [message, setMessage] = useState('')
@@ -51,11 +51,12 @@ export default function MarketplaceTab({
     setBuying(true)
     setError('')
     try {
-      const result = await buyListing(listing.id)
+      // Buying from another business is always personal spending.
+      const result = await buyListing(listing.id, 'personal')
       if (result?.error) {
         setError(result.error)
       } else {
-        spend(listing.price)
+        spend(listing.price, 'personal')
         setPurchased(s => new Set(s).add(listing.id))
         setListings(ls =>
           ls.map(l => l.id === listing.id ? { ...l, quantity: l.quantity - 1 } : l)
@@ -109,7 +110,7 @@ export default function MarketplaceTab({
             <span className="text-sm font-semibold text-gray-400">WizCoins</span>
           </div>
           <div className="flex justify-between mt-2 text-sm">
-            <span className="text-gray-400">Your balance</span>
+            <span className="text-gray-400">Your personal wallet</span>
             <span className="font-semibold text-gray-700">{balance.toLocaleString()} WC</span>
           </div>
           {afterBalance >= 0 && (

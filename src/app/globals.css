@@ -147,3 +147,11 @@ h1, h2, h3, h4 {
 @media (prefers-reduced-motion: reduce) {
   .iridescent, .coin::before { animation: none; }
 }
+
+/* ── Print / Save-as-PDF: isolate the marked area, hide app chrome ── */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+  .print-hide { display: none !important; }
+}
