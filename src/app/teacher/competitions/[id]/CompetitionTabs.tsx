@@ -67,29 +67,18 @@ export default function CompetitionTabs({
             {t.key === 'standings' && canAdvance && statements.some(s => s.qualified) && (
               <span className="ml-1.5 text-teal-dark">✓</span>
             )}
+            {t.key === 'groups' && (judgeCount > 0 || spectatorCount > 0) && (
+              <span className="ml-1.5 text-xs font-normal text-gray-400">
+                {statements.length}+{spectatorCount + judgeCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* The three roles are distinguished inside GroupsTable itself. */}
       {tab === 'groups' && (
-        <>
-          {judgeCount > 0 && (
-            <div className="mb-4 rounded-lg border-l-4 border-teal bg-teal/[0.06] px-4 py-3 text-sm text-ink-soft">
-              <span className="font-semibold text-teal-dark">{judgeCount} judges. </span>
-              Their logins are in the <span className="font-semibold">JUDGES</span> panel below. Judges
-              spend from their personal wallet only — they cannot list items or receive payments.
-            </div>
-          )}
-          {spectatorCount > 0 && (
-            <div className="mb-4 rounded-lg border-l-4 border-orange bg-orange/[0.06] px-4 py-3 text-sm text-ink-soft">
-              <span className="font-semibold text-orange-dark">{spectatorCount} spectators. </span>
-              Students whose team did not reach the final, keeping their round 1 personal wallets so they
-              can buy from the finalists. Same login codes as round 1. They cannot sell or be paid, and
-              their business wallets are zeroed so no knocked-out team can bankroll a finalist.
-            </div>
-          )}
-          <GroupsTable groups={groups} initialBalance={initialBalance} canManage={canManage} />
-        </>
+        <GroupsTable groups={groups} initialBalance={initialBalance} canManage={canManage} />
       )}
       {tab === 'business' && (
         <BusinessStatements statements={statements} />

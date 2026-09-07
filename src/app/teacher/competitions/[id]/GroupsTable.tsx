@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { renameGroup, removeStudent, addStudent, previewAsStudent } from '@/lib/teacher-actions'
 
@@ -14,11 +14,56 @@ type Group = {
   students: Student[]
 }
 
+type Kind = Group['kind']
+
+// One place defining how each role reads, so the table, the cards, the filter
+// chips and the CSV can never drift apart.
+const KIND = {
+  team: {
+    label: 'Competing',
+    plural: 'Competing teams',
+    icon: '🏆',
+    blurb: 'Sell, buy and are ranked. These are the businesses in the final.',
+    rail: 'bg-orange',
+    chipOn: 'bg-orange text-white border-orange',
+    chipOff: 'text-orange-dark border-orange/40 hover:border-orange',
+    band: 'bg-orange/[0.07] text-orange-dark border-orange/30',
+    badge: 'bg-orange text-white',
+    tint: 'bg-orange/[0.03]',
+  },
+  spectators: {
+    label: 'Spectators',
+    plural: 'Spectator teams',
+    icon: '👥',
+    blurb: 'Knocked out in round 1. Buy from the finalists — cannot sell, be paid, or rank.',
+    rail: 'bg-teal',
+    chipOn: 'bg-teal text-white border-teal',
+    chipOff: 'text-teal-dark border-teal/40 hover:border-teal',
+    band: 'bg-teal/[0.07] text-teal-dark border-teal/30',
+    badge: 'bg-teal text-white',
+    tint: 'bg-teal/[0.03]',
+  },
+  judges: {
+    label: 'Judges',
+    plural: 'Judging panel',
+    icon: '⚖️',
+    blurb: 'Spend a large personal wallet with the finalists. Cannot sell, be paid, or rank.',
+    rail: 'bg-ink',
+    chipOn: 'bg-ink text-white border-ink',
+    chipOff: 'text-ink border-ink/30 hover:border-ink',
+    band: 'bg-ink/[0.06] text-ink border-ink/25',
+    badge: 'bg-ink text-white',
+    tint: 'bg-ink/[0.02]',
+  },
+} as const satisfies Record<Kind, Record<string, string>>
+
+const KIND_ORDER: Kind[] = ['team', 'spectators', 'judges']
+
 function exportCSV(groups: Group[]) {
-  const rows = [['Group', 'Password', 'WizCoins Balance', 'Login Code', 'Personal Balance']]
+  const rows = [['Role', 'Group', 'Password', 'WizCoins Balance', 'Login Code', 'Personal Balance']]
   for (const g of groups) {
     for (const s of g.students) {
-      rows.push([g.name, g.groupPassword, String(g.balance), s.loginCode, String(s.personalBalance)])
+      rows.push([KIND[g.kind].label, g.name, g.groupPassword, String(g.balance), s.loginCode, String(s.personalBalance)])
     }
   }
   const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
@@ -53,6 +98,19 @@ export default function GroupsTable({
   const [editingName, setEditingName] = useState('')
   const [adding, setAdding] = useState<Record<number, boolean>>({})
   const [previewing, setPreviewing] = useState<number | null>(null)
+  const [only, setOnly] = useState<Kind | null>(null)
+
+  // Which roles are actually present — a plain class hackathon has teams only,
+  // and should look exactly as it did before.
+  const presentKinds = KIND_ORDER.filter(k => groups.some(g => g.kind === k))
+  const mixed = presentKinds.length > 1
+
+  const countsFor = (k: Kind) => {
+    const gs = groups.filter(g => g.kind === k)
+    return { groups: gs.length, students: gs.reduce((n, g) => n + g.students.length, 0) }
+  }
+
+  const visibleGroups = only ? sortedGroups.filter(g => g.kind === only) : sortedGroups
 
   function isRevealed(id: number) {
     return showAll || !!revealed[id]
@@ -92,10 +150,13 @@ export default function GroupsTable({
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold text-gray-700">Student Login Credentials</h2>
+        <h2 className="text-lg font-semibold text-gray-700">
+          Student Login Credentials
+          {only && <span className="ml-2 text-sm font-normal text-gray-400">{KIND[only].plural} only</span>}
+        </h2>
         <div className="flex gap-2">
           <button
-            onClick={() => exportCSV(sortedGroups)}
+            onClick={() => exportCSV(visibleGroups)}
             className="text-sm text-orange border border-ink/15 hover:bg-paper-2 px-3 py-1.5 rounded-lg transition font-medium"
           >
             Export CSV
@@ -120,6 +181,64 @@ export default function GroupsTable({
           )}
         </div>
       </div>
+
+      {mixed && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3 mb-4">
+            {presentKinds.map(k => {
+              const c = countsFor(k)
+              const on = only === k
+              return (
+                <button
+                  key={k}
+                  onClick={() => setOnly(on ? null : k)}
+                  aria-pressed={on}
+                  className={`text-left bg-white rounded-xl border-2 p-4 transition relative overflow-hidden ${
+                    on ? 'border-ink shadow-sm' : 'border-gray-100 hover:border-ink/20'
+                  }`}
+                >
+                  <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${KIND[k].rail}`} />
+                  <div className="pl-2">
+                    <p className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                      <span>{KIND[k].icon}</span>{KIND[k].plural}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-display text-3xl font-bold text-gray-900 tabular-nums">{c.students}</span>
+                      <span className="text-sm text-gray-400"> students</span>
+                      <span className="text-sm text-gray-300"> · </span>
+                      <span className="text-sm text-gray-500 tabular-nums">{c.groups} {c.groups === 1 ? 'group' : 'groups'}</span>
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-1.5 leading-snug">{KIND[k].blurb}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Show</span>
+            <button
+              onClick={() => setOnly(null)}
+              className={`px-3 py-1 text-xs font-semibold rounded-full border transition ${
+                only === null ? 'bg-ink text-white border-ink' : 'text-gray-600 border-gray-300 hover:border-ink/40'
+              }`}
+            >
+              Everyone
+            </button>
+            {presentKinds.map(k => (
+              <button
+                key={k}
+                onClick={() => setOnly(k)}
+                className={`px-3 py-1 text-xs font-semibold rounded-full border transition ${
+                  only === k ? KIND[k].chipOn : `bg-white ${KIND[k].chipOff}`
+                }`}
+              >
+                {KIND[k].icon} {KIND[k].label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {editing && (
         <p className="text-xs text-orange bg-paper-2 border border-ink/15 rounded-lg px-3 py-2 mb-3">
@@ -148,14 +267,22 @@ export default function GroupsTable({
             </tr>
           </thead>
           <tbody>
-            {sortedGroups.map((g, gi) => {
+            {visibleGroups.map((g, gi) => {
               const studs = [...g.students].sort((a, b) => a.loginCode.localeCompare(b.loginCode))
               const span = Math.max(studs.length, 1)
-              const zebra = gi % 2 === 1 ? 'bg-paper-2/20' : 'bg-white'
+              const k = KIND[g.kind]
+              // Restart numbering per role and band the boundary, so the three
+              // populations read as three blocks rather than one long list.
+              const startsSection = mixed && (gi === 0 || visibleGroups[gi - 1].kind !== g.kind)
+              const indexInKind = visibleGroups.slice(0, gi).filter(x => x.kind === g.kind).length + 1
+              const zebra = mixed ? k.tint : (gi % 2 === 1 ? 'bg-paper-2/20' : 'bg-white')
               const gCell = `px-4 py-3 align-top border-t-2 border-ink/10 ${zebra}`
               const groupCells = (
                 <>
-                  <td rowSpan={span} className={`${gCell} text-gray-400 font-medium`}>{gi + 1}</td>
+                  <td rowSpan={span} className={`${gCell} text-gray-400 font-medium relative`}>
+                    {mixed && <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${k.rail}`} />}
+                    <span className="pl-1.5 block">{mixed ? indexInKind : gi + 1}</span>
+                  </td>
                   <td rowSpan={span} className={gCell}>
                     {editing && editingNameId === g.id ? (
                       <input
@@ -174,6 +301,11 @@ export default function GroupsTable({
                         >
                           {g.name}
                         </span>
+                        {mixed && (
+                          <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full w-fit ${k.badge}`}>
+                            {k.label}
+                          </span>
+                        )}
                         <span className="text-[11px] text-gray-400">{studs.length} {studs.length === 1 ? 'participant' : 'participants'}</span>
                         {!editing && (
                           <button
@@ -210,28 +342,56 @@ export default function GroupsTable({
                     </div>
                   </td>
                   <td rowSpan={span} className={gCell}>
-                    <span className="font-bold text-orange tabular-nums">{g.balance.toLocaleString()}</span>
-                    <span className="ml-1 text-xs">{groupDelta(g.balance)}</span>
-                    <p className="text-[10px] text-gray-400 mt-0.5">shared by group</p>
+                    {g.kind === 'team' ? (
+                      <>
+                        <span className="font-bold text-orange tabular-nums">{g.balance.toLocaleString()}</span>
+                        <span className="ml-1 text-xs">{groupDelta(g.balance)}</span>
+                        <p className="text-[10px] text-gray-400 mt-0.5">shared by group</p>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-gray-300">—</span>
+                        <p className="text-[10px] text-gray-400 mt-0.5">no business wallet</p>
+                      </>
+                    )}
                   </td>
                 </>
               )
 
+              const band = startsSection ? (
+                <tr key={`band-${g.kind}`}>
+                  <td colSpan={editing ? 7 : 6} className={`px-4 py-2 border-t-2 border-b ${k.band}`}>
+                    <span className="text-xs font-bold uppercase tracking-wide">
+                      {k.icon} {k.plural}
+                      <span className="font-normal normal-case tracking-normal opacity-70">
+                        {' '}· {countsFor(g.kind).groups} groups, {countsFor(g.kind).students} students — {k.blurb}
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+              ) : null
+
               if (studs.length === 0) {
                 return (
-                  <tr key={`g-${g.id}`}>
+                  <Fragment key={`g-${g.id}`}>
+                  {band}
+                  <tr>
                     {groupCells}
                     <td className={`px-4 py-3 border-t-2 border-ink/10 text-gray-300 text-xs ${zebra}`} colSpan={editing ? 3 : 2}>
                       No participants
                     </td>
                   </tr>
+                  </Fragment>
                 )
               }
 
-              return studs.map((s, si) => {
+              return (
+                <Fragment key={`g-${g.id}`}>
+                {band}
+                {studs.map((s, si) => {
                 const pCell = `px-4 py-2.5 ${si === 0 ? 'border-t-2 border-ink/10' : 'border-t border-gray-100'} ${zebra}`
                 return (
-                  <tr key={`s-${s.id}`}>
+                  <tr key={s.id}>
                     {si === 0 && groupCells}
                     <td className={pCell}>
                       <span className="font-pixel text-xs bg-paper-2 text-orange-dark px-2.5 py-1 rounded-full whitespace-nowrap">{s.loginCode}</span>
@@ -250,7 +410,9 @@ export default function GroupsTable({
                     )}
                   </tr>
                 )
-              })
+                })}
+                </Fragment>
+              )
             })}
           </tbody>
         </table>
@@ -258,10 +420,28 @@ export default function GroupsTable({
 
       {/* Mobile: one card per group, participants as their own rows */}
       <div className="md:hidden flex flex-col gap-3">
-        {sortedGroups.map(g => (
-          <div key={g.id} className="bg-white rounded-xl shadow-sm p-4">
+        {visibleGroups.map((g, gi) => (
+          <Fragment key={g.id}>
+          {mixed && (gi === 0 || visibleGroups[gi - 1].kind !== g.kind) && (
+            <div className={`rounded-lg border px-3 py-2 ${KIND[g.kind].band}`}>
+              <p className="text-xs font-bold uppercase tracking-wide">
+                {KIND[g.kind].icon} {KIND[g.kind].plural}
+                <span className="font-normal normal-case tracking-normal opacity-70">
+                  {' '}· {countsFor(g.kind).groups} groups, {countsFor(g.kind).students} students
+                </span>
+              </p>
+              <p className="text-[11px] mt-0.5 opacity-80 normal-case font-normal">{KIND[g.kind].blurb}</p>
+            </div>
+          )}
+          <div className="bg-white rounded-xl shadow-sm p-4 relative overflow-hidden">
+            {mixed && <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${KIND[g.kind].rail}`} />}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
+                {mixed && (
+                  <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full inline-block mb-1 ${KIND[g.kind].badge}`}>
+                    {KIND[g.kind].label}
+                  </span>
+                )}
                 {editing && editingNameId === g.id ? (
                   <input
                     autoFocus
@@ -280,9 +460,15 @@ export default function GroupsTable({
                   </span>
                 )}
                 <div className="text-sm mt-0.5">
-                  <span className="font-bold text-orange tabular-nums">{g.balance.toLocaleString()}</span>
-                  <span className="text-gray-400"> WizCoins</span>
-                  <span className="ml-1 text-xs">{groupDelta(g.balance)}</span>
+                  {g.kind === 'team' ? (
+                    <>
+                      <span className="font-bold text-orange tabular-nums">{g.balance.toLocaleString()}</span>
+                      <span className="text-gray-400"> WizCoins</span>
+                      <span className="ml-1 text-xs">{groupDelta(g.balance)}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-400">No business wallet · personal only</span>
+                  )}
                 </div>
               </div>
               {!editing && (
@@ -342,6 +528,7 @@ export default function GroupsTable({
               )}
             </div>
           </div>
+          </Fragment>
         ))}
       </div>
     </div>
