@@ -2,7 +2,7 @@ import { db } from '../src/db/index'
 import {
   competitions, groups, students, listings, transfers, transactions, competitionOrganizers,
 } from '../src/db/schema'
-import { eq, inArray, or } from 'drizzle-orm'
+import { inArray, or } from 'drizzle-orm'
 
 // Usage:
 //   npx tsx --env-file=.env.local scripts/delete-competitions.ts 8 10          (dry run)

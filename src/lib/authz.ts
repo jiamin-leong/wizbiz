@@ -4,12 +4,27 @@ import { eq, and } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
-export type TeacherSession = { role: 'teacher'; id: number; email: string }
+export type TeacherSession = { role: 'teacher'; id: number; email: string; isAdmin?: boolean }
 
 export async function requireTeacher(): Promise<TeacherSession> {
   const session = await getSession()
   if (!session || session.role !== 'teacher') redirect('/')
   return session
+}
+
+/**
+ * Creating programmes and standalone competitions is reserved for admins;
+ * everything else a teacher can do is unchanged.
+ */
+export async function requireAdminTeacher(): Promise<TeacherSession> {
+  const session = await requireTeacher()
+  if (!session.isAdmin) redirect('/teacher')
+  return session
+}
+
+export async function isAdmin(): Promise<boolean> {
+  const session = await getSession()
+  return session?.role === 'teacher' && session.isAdmin === true
 }
 
 export type CompetitionRole =

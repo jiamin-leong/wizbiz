@@ -5,11 +5,11 @@ import {
   programmes, classes, teams, participants,
   competitions, groups, students, transfers, teachers, competitionOrganizers,
 } from '@/db/schema'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, isNotNull } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { requireTeacher, getProgrammeAccess, getCompetitionAccess } from '@/lib/authz'
+import { requireTeacher, requireAdminTeacher, getProgrammeAccess, getCompetitionAccess } from '@/lib/authz'
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
 import {
   generateGroupPassword, generateGroupPasswords, allocateLoginCodes,
@@ -24,7 +24,7 @@ import { computeStatements, rankStatements, ADVANCING_PER_CLASS } from '@/lib/st
 const MAX_CLASSES = Math.floor(THEME_NAMES.length / MAX_GROUPS_PER_CLASS)
 
 export async function createProgramme(formData: FormData) {
-  const session = await requireTeacher()
+  const session = await requireAdminTeacher()
 
   const name = ((formData.get('name') as string) ?? '').trim()
   const classNames = formData.getAll('className').map(v => String(v).trim())
@@ -63,7 +63,17 @@ export async function createProgramme(formData: FormData) {
   redirect(`/teacher/programmes/${programme.id}`)
 }
 
-export async function assignClassTeacher(classId: number, email: string) {
+/** Approved teacher accounts, for the class-teacher picker. */
+export async function listAssignableTeachers() {
+  await requireTeacher()
+  return db
+    .select({ id: teachers.id, name: teachers.name, email: teachers.email })
+    .from(teachers)
+    .where(isNotNull(teachers.approvedAt))
+    .orderBy(teachers.name)
+}
+
+export async function assignClassTeacher(classId: number, teacherId: number | null) {
   const session = await requireTeacher()
 
   const [klass] = await db
@@ -75,18 +85,18 @@ export async function assignClassTeacher(classId: number, email: string) {
   const access = await getProgrammeAccess(klass.programmeId, session.id)
   if (!access?.isOwner) return { error: 'Only the programme owner can assign class teachers.' }
 
-  const trimmed = email.toLowerCase().trim()
-  if (!trimmed) {
+  if (teacherId === null) {
     await db.update(classes).set({ teacherId: null }).where(eq(classes.id, classId))
     revalidatePath(`/teacher/programmes/${klass.programmeId}`)
     return { success: true }
   }
 
   const [teacher] = await db
-    .select({ id: teachers.id, name: teachers.name })
+    .select({ id: teachers.id, name: teachers.name, approvedAt: teachers.approvedAt })
     .from(teachers)
-    .where(eq(teachers.email, trimmed))
-  if (!teacher) return { error: 'No teacher account found with that email' }
+    .where(eq(teachers.id, teacherId))
+  if (!teacher) return { error: 'That teacher account no longer exists.' }
+  if (!teacher.approvedAt) return { error: 'That account is still waiting for approval.' }
 
   await db.update(classes).set({ teacherId: teacher.id }).where(eq(classes.id, classId))
   revalidatePath(`/teacher/programmes/${klass.programmeId}`)

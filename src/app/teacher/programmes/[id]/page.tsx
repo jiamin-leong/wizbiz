@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { requireTeacher, getProgrammeAccess } from '@/lib/authz'
 import { allocateGroups } from '@/lib/allocation'
 import { ADVANCING_PER_CLASS } from '@/lib/standings'
+import { listAssignableTeachers } from '@/lib/programme-actions'
 import { competitionStatus } from '@/lib/competition'
 import LaunchRound1Form from './LaunchRound1Form'
 import CreateFinalForm from './CreateFinalForm'
@@ -55,7 +56,7 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
           .where(inArray(groups.competitionId, round1Ids))
           .groupBy(groups.competitionId)
       : Promise.resolve([]),
-    db.select({ id: teachers.id, name: teachers.name, email: teachers.email }).from(teachers),
+    listAssignableTeachers(),
     round2
       ? db.select({ count: sql<number>`count(*)::int` })
           .from(groups)
@@ -170,7 +171,8 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
                     {access.isOwner && (
                       <ClassTeacherField
                         classId={klass.id}
-                        currentEmail={teacher?.email ?? ''}
+                        currentTeacherId={klass.teacherId}
+                        teachers={teacherRows}
                       />
                     )}
                     {comp && (

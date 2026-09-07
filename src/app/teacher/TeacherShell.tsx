@@ -8,12 +8,14 @@ type Comp = { id: number; name: string }
 
 export default function TeacherShell({
   teacher,
+  isAdmin,
   upcoming,
   active,
   past,
   children,
 }: {
   teacher: { name: string; email: string } | undefined
+  isAdmin: boolean
   upcoming: Comp[]
   active: Comp[]
   past: Comp[]
@@ -128,15 +130,6 @@ export default function TeacherShell({
             </div>
           )}
 
-          {/* New competition */}
-          <Link
-            href="/teacher/competitions/new"
-            onClick={close}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-orange hover:bg-paper-2 transition font-medium border border-dashed border-ink/15 hover:border-orange"
-          >
-            <span>＋</span> New Competition
-          </Link>
-
           {/* Divider */}
           <div className="border-t border-gray-100" />
 
@@ -146,6 +139,15 @@ export default function TeacherShell({
               <p className="text-sm font-semibold text-gray-700">{teacher?.name}</p>
               <p className="text-xs text-gray-400 truncate">{teacher?.email}</p>
             </div>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={close}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-paper-2 hover:text-orange-dark transition"
+              >
+                <span>⚙</span> Admin &amp; invites
+              </Link>
+            )}
             <form action={logout}>
               <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition text-left">
                 <span>🚪</span> Logout

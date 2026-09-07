@@ -10,6 +10,7 @@ import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
 import { generateGroupPasswords, allocateLoginCodes } from '@/lib/credentials'
 import {
   requireTeacher,
+  requireAdminTeacher,
   getCompetitionAccess,
   competitionIdForGroup,
   competitionIdForStudent,
@@ -19,8 +20,7 @@ import {
 const DENIED = { error: 'You do not have access to that competition.' }
 
 export async function createCompetition(formData: FormData) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireAdminTeacher()
 
   const name = formData.get('name') as string
   const startDate = new Date(formData.get('startDate') as string)

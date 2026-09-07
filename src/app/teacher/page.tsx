@@ -3,10 +3,12 @@ import { competitions, groups, students, programmes, classes } from '@/db/schema
 import { eq, inArray, sql, or } from 'drizzle-orm'
 import Link from 'next/link'
 import { competitionStatus } from '@/lib/competition'
-import { requireTeacher, visibleCompetitionIds } from '@/lib/authz'
+import { requireTeacher, visibleCompetitionIds, isAdmin } from '@/lib/authz'
 
 export default async function TeacherDashboard() {
   const session = await requireTeacher()
+  // Only admins create programmes and standalone competitions.
+  const admin = await isAdmin()
 
   // Programmes this teacher owns, plus any whose class they teach.
   const programmeRows = await db
@@ -63,21 +65,29 @@ export default async function TeacherDashboard() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Programmes</h1>
-        <Link
-          href="/teacher/programmes/new"
-          className="text-sm font-medium text-orange border border-ink/15 bg-white hover:border-orange px-3 py-1.5 rounded-lg shadow-sm transition shrink-0"
-        >
-          + New programme
-        </Link>
+        {admin && (
+          <Link
+            href="/teacher/programmes/new"
+            className="text-sm font-medium text-orange border border-ink/15 bg-white hover:border-orange px-3 py-1.5 rounded-lg shadow-sm transition shrink-0"
+          >
+            + New programme
+          </Link>
+        )}
       </div>
 
       {programmeRows.length === 0 ? (
         <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm mb-10">
-          No programmes yet.{' '}
-          <Link href="/teacher/programmes/new" className="text-orange hover:underline font-medium">
-            Set one up
-          </Link>{' '}
-          to run several classes through two rounds.
+          {admin ? (
+            <>
+              No programmes yet.{' '}
+              <Link href="/teacher/programmes/new" className="text-orange hover:underline font-medium">
+                Set one up
+              </Link>{' '}
+              to run several classes through two rounds.
+            </>
+          ) : (
+            <>You haven&apos;t been assigned to a programme yet.</>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3 mb-10">
@@ -113,12 +123,14 @@ export default async function TeacherDashboard() {
 
       <div className="flex items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Standalone competitions</h1>
-        <Link
-          href="/teacher/competitions/new"
-          className="text-sm font-medium text-gray-600 border border-ink/15 bg-white hover:border-ink/30 px-3 py-1.5 rounded-lg shadow-sm transition shrink-0"
-        >
-          + New
-        </Link>
+        {admin && (
+          <Link
+            href="/teacher/competitions/new"
+            className="text-sm font-medium text-gray-600 border border-ink/15 bg-white hover:border-ink/30 px-3 py-1.5 rounded-lg shadow-sm transition shrink-0"
+          >
+            + New standalone competition
+          </Link>
+        )}
       </div>
 
       {myCompetitions.length === 0 ? (
