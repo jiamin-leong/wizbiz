@@ -154,4 +154,8 @@ h1, h2, h3, h4 {
   .print-area, .print-area * { visibility: visible; }
   .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
   .print-hide { display: none !important; }
+  /* One class per sheet, and never split a team across a page break. */
+  .break-after-page { break-after: page; }
+  .break-after-page:last-child { break-after: auto; }
+  .break-inside-avoid { break-inside: avoid; }
 }
