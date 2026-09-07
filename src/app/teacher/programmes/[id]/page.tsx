@@ -115,12 +115,22 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* ── Round 1 ── */}
-      <div className="flex items-baseline gap-3 mb-3">
-        <h2 className="text-lg font-semibold text-gray-700">Round 1 — class hackathons</h2>
+      <div className="flex flex-wrap items-baseline justify-between gap-3 mb-3">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold text-gray-700">Round 1 — class hackathons</h2>
+          {launched && (
+            <span className="text-sm text-gray-400">
+              {classesConfirmed}/{round1.length} classes confirmed
+            </span>
+          )}
+        </div>
         {launched && (
-          <span className="text-sm text-gray-400">
-            {classesConfirmed}/{round1.length} classes confirmed
-          </span>
+          <Link
+            href={`/teacher/programmes/${programmeId}/credentials`}
+            className="text-sm font-medium text-orange border border-ink/15 bg-white hover:border-orange px-3 py-1.5 rounded-lg shadow-sm transition shrink-0"
+          >
+            🖨 Print all logins
+          </Link>
         )}
       </div>
 
