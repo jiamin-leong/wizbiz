@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { competitions, groups, students, programmes, classes } from '@/db/schema'
-import { eq, inArray, sql, or } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import Link from 'next/link'
 import { competitionStatus } from '@/lib/competition'
 import { requireTeacher, visibleCompetitionIds, isAdmin } from '@/lib/authz'
@@ -10,22 +10,30 @@ export default async function TeacherDashboard() {
   // Only admins create programmes and standalone competitions.
   const admin = await isAdmin()
 
-  // Programmes this teacher owns, plus any whose class they teach.
+  // Every programme is visible to every approved teacher, so they can find
+  // their class and claim it. Opening a class's hackathon is a separate check.
   const programmeRows = await db
-    .selectDistinct({ id: programmes.id, name: programmes.name, ownerTeacherId: programmes.ownerTeacherId })
+    .select({ id: programmes.id, name: programmes.name, ownerTeacherId: programmes.ownerTeacherId })
     .from(programmes)
-    .leftJoin(classes, eq(classes.programmeId, programmes.id))
-    .where(or(eq(programmes.ownerTeacherId, session.id), eq(classes.teacherId, session.id)))
+    .orderBy(programmes.id)
 
   const programmeIds = programmeRows.map(p => p.id)
-  const classCounts = programmeIds.length > 0
+  const classRows = programmeIds.length > 0
     ? await db
-        .select({ programmeId: classes.programmeId, count: sql<number>`count(*)::int`, students: sql<number>`sum(${classes.headcount})::int` })
+        .select({ programmeId: classes.programmeId, headcount: classes.headcount, teacherId: classes.teacherId })
         .from(classes)
         .where(inArray(classes.programmeId, programmeIds))
-        .groupBy(classes.programmeId)
     : []
-  const classCountMap = Object.fromEntries(classCounts.map(r => [r.programmeId, r]))
+
+  const classCountMap = Object.fromEntries(programmeIds.map(id => {
+    const rows = classRows.filter(c => c.programmeId === id)
+    return [id, {
+      count: rows.length,
+      students: rows.reduce((n, c) => n + c.headcount, 0),
+      mine: rows.filter(c => c.teacherId === session.id).length,
+      unclaimed: rows.filter(c => c.teacherId === null).length,
+    }]
+  }))
 
   const visibleIds = await visibleCompetitionIds(session.id)
 
@@ -86,7 +94,7 @@ export default async function TeacherDashboard() {
               to run several classes through two rounds.
             </>
           ) : (
-            <>You haven&apos;t been assigned to a programme yet.</>
+            <>No programmes have been set up yet.</>
           )}
         </div>
       ) : (
@@ -100,9 +108,23 @@ export default async function TeacherDashboard() {
               <div className="flex justify-between items-start mb-3">
                 <p className="text-2xl font-extrabold text-gray-900 group-hover:text-orange transition">{p.name}</p>
                 <div className="flex items-center gap-2 shrink-0 ml-4">
-                  <span className="text-xs font-medium px-3 py-1 rounded-full bg-teal/15 text-teal-dark">
-                    {p.ownerTeacherId === session.id ? 'programme owner' : 'class teacher'}
-                  </span>
+                  {(() => {
+                    const c = classCountMap[p.id]
+                    if (p.ownerTeacherId === session.id) {
+                      return <span className="text-xs font-medium px-3 py-1 rounded-full bg-teal/15 text-teal-dark">programme owner</span>
+                    }
+                    if (c?.mine) {
+                      return <span className="text-xs font-medium px-3 py-1 rounded-full bg-teal/15 text-teal-dark">
+                        your class{c.mine > 1 ? 'es' : ''}
+                      </span>
+                    }
+                    if (c?.unclaimed) {
+                      return <span className="text-xs font-medium px-3 py-1 rounded-full bg-orange/15 text-orange-dark">
+                        {c.unclaimed} class{c.unclaimed > 1 ? 'es' : ''} to claim
+                      </span>
+                    }
+                    return <span className="text-xs font-medium px-3 py-1 rounded-full bg-gray-100 text-gray-500">all classes taken</span>
+                  })()}
                   <span className="text-gray-300 group-hover:text-orange transition text-2xl font-black">→</span>
                 </div>
               </div>

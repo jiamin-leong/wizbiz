@@ -11,6 +11,7 @@ import { competitionStatus } from '@/lib/competition'
 import LaunchRound1Form from './LaunchRound1Form'
 import CreateFinalForm from './CreateFinalForm'
 import ClassTeacherField from './ClassTeacherField'
+import ClaimClassButton from './ClaimClassButton'
 
 export default async function ProgrammePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,10 +30,9 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
     .where(eq(classes.programmeId, programmeId))
     .orderBy(classes.id)
 
-  // A class teacher only sees their own class; the programme owner sees all.
-  const visibleClasses = access.isOwner
-    ? allClasses
-    : allClasses.filter(c => access.ownClassIds.includes(c.id))
+  // Every approved teacher sees every class, so they can find and claim
+  // theirs. Opening a class's hackathon is checked separately.
+  const visibleClasses = allClasses
 
   const programmeCompetitions = await db
     .select()
@@ -161,6 +161,16 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
                           top {qualified} confirmed
                         </span>
                       )}
+                      {klass.teacherId === session.id && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal text-white">
+                          yours
+                        </span>
+                      )}
+                      {klass.teacherId === null && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-orange/40 text-orange-dark">
+                          unclaimed
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
                       {klass.headcount} students · {teamCount} teams
@@ -168,14 +178,20 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {access.isOwner && (
+                    {access.isOwner ? (
                       <ClassTeacherField
                         classId={klass.id}
                         currentTeacherId={klass.teacherId}
                         teachers={teacherRows}
                       />
+                    ) : (klass.teacherId === null || klass.teacherId === session.id) && (
+                      <ClaimClassButton
+                        classId={klass.id}
+                        className={klass.name}
+                        mine={klass.teacherId === session.id}
+                      />
                     )}
-                    {comp && (
+                    {comp && (access.isOwner || klass.teacherId === session.id) && (
                       <Link
                         href={`/teacher/competitions/${comp.id}`}
                         className="text-sm font-medium text-orange border border-ink/15 bg-white hover:border-orange px-3 py-1.5 rounded-lg transition"

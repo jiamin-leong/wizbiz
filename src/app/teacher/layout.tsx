@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { teachers, competitions, competitionOrganizers } from '@/db/schema'
+import { teachers, competitions, competitionOrganizers, programmes, classes } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { competitionStatus } from '@/lib/competition'
 import TeacherShell from './TeacherShell'
@@ -32,6 +32,29 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     return <PendingApproval name={teacher.name} email={teacher.email} />
   }
 
+  // Every approved teacher sees every programme, so they can find and claim
+  // their class. The dot marks the ones they already teach.
+  const programmeRows = await db
+    .select({ id: programmes.id, name: programmes.name })
+    .from(programmes)
+    .orderBy(programmes.id)
+
+  const programmeClasses = programmeRows.length > 0
+    ? await db
+        .select({ programmeId: classes.programmeId, teacherId: classes.teacherId })
+        .from(classes)
+    : []
+
+  const programmeList = programmeRows.map(p => {
+    const rows = programmeClasses.filter(c => c.programmeId === p.id)
+    return {
+      id: p.id,
+      name: p.name,
+      mine: rows.some(c => c.teacherId === session.id),
+      unclaimed: rows.filter(c => c.teacherId === null).length,
+    }
+  })
+
   const seen = new Set<number>()
   const allCompetitions = [...ownedComps, ...coOrgComps].filter(c => {
     if (seen.has(c.id)) return false
@@ -44,7 +67,14 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const past = allCompetitions.filter(c => competitionStatus(c.startDate, c.endDate) === 'ended')
 
   return (
-    <TeacherShell teacher={teacher} isAdmin={teacher?.isAdmin ?? false} upcoming={upcoming} active={active} past={past}>
+    <TeacherShell
+      teacher={teacher}
+      isAdmin={teacher?.isAdmin ?? false}
+      programmes={programmeList}
+      upcoming={upcoming}
+      active={active}
+      past={past}
+    >
       {children}
     </TeacherShell>
   )

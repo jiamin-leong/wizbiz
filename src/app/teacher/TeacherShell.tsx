@@ -9,6 +9,7 @@ type Comp = { id: number; name: string }
 export default function TeacherShell({
   teacher,
   isAdmin,
+  programmes,
   upcoming,
   active,
   past,
@@ -16,6 +17,7 @@ export default function TeacherShell({
 }: {
   teacher: { name: string; email: string } | undefined
   isAdmin: boolean
+  programmes: { id: number; name: string; mine: boolean; unclaimed: number }[]
   upcoming: Comp[]
   active: Comp[]
   past: Comp[]
@@ -68,6 +70,33 @@ export default function TeacherShell({
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
+          {/* Programmes — the way in to class hackathons */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Programmes</p>
+            {programmes.length === 0 ? (
+              <p className="px-3 text-sm text-gray-400">None yet</p>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {programmes.map(p => (
+                  <Link
+                    key={p.id}
+                    href={`/teacher/programmes/${p.id}`}
+                    onClick={close}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-paper-2 hover:text-orange-dark transition"
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.mine ? 'bg-teal' : 'bg-gray-300'}`} />
+                    <span className="truncate">{p.name}</span>
+                    {!p.mine && p.unclaimed > 0 && (
+                      <span className="ml-auto shrink-0 text-[10px] font-semibold text-orange-dark bg-orange/15 px-1.5 py-0.5 rounded-full">
+                        {p.unclaimed}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Upcoming competitions */}
           {upcoming.length > 0 && (
             <div>

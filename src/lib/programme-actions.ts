@@ -5,7 +5,7 @@ import {
   programmes, classes, teams, participants,
   competitions, groups, students, transfers, teachers, competitionOrganizers,
 } from '@/db/schema'
-import { eq, and, inArray, isNotNull } from 'drizzle-orm'
+import { eq, and, inArray, isNotNull, isNull } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
@@ -71,6 +71,65 @@ export async function listAssignableTeachers() {
     .from(teachers)
     .where(isNotNull(teachers.approvedAt))
     .orderBy(teachers.name)
+}
+
+/**
+ * Claims an unassigned class for yourself.
+ *
+ * Only unassigned classes can be claimed, so this is never a way to take a
+ * class off a colleague — the programme owner reassigns those.
+ */
+export async function claimClass(classId: number) {
+  const session = await requireTeacher()
+
+  const [me] = await db
+    .select({ approvedAt: teachers.approvedAt, name: teachers.name })
+    .from(teachers)
+    .where(eq(teachers.id, session.id))
+  if (!me?.approvedAt) return { error: 'Your account is still waiting for approval.' }
+
+  const [klass] = await db
+    .select({ id: classes.id, name: classes.name, programmeId: classes.programmeId, teacherId: classes.teacherId })
+    .from(classes)
+    .where(eq(classes.id, classId))
+  if (!klass) return { error: 'That class no longer exists.' }
+  if (klass.teacherId === session.id) return { success: true, name: klass.name }
+  if (klass.teacherId) return { error: 'Someone else already teaches that class.' }
+
+  // Claim only if still unassigned, so two people clicking at once cannot both
+  // take it.
+  const claimed = await db
+    .update(classes)
+    .set({ teacherId: session.id })
+    .where(and(eq(classes.id, classId), isNull(classes.teacherId)))
+    .returning({ id: classes.id })
+  if (claimed.length === 0) return { error: 'Someone else just claimed that class.' }
+
+  // The class hackathon, if already launched, follows its teacher.
+  await db
+    .update(competitions)
+    .set({ teacherId: session.id })
+    .where(and(eq(competitions.classId, classId), eq(competitions.round, 1)))
+
+  revalidatePath(`/teacher/programmes/${klass.programmeId}`)
+  revalidatePath('/teacher')
+  return { success: true, name: klass.name }
+}
+
+export async function releaseClass(classId: number) {
+  const session = await requireTeacher()
+
+  const [klass] = await db
+    .select({ programmeId: classes.programmeId, teacherId: classes.teacherId })
+    .from(classes)
+    .where(eq(classes.id, classId))
+  if (!klass) return { error: 'That class no longer exists.' }
+  if (klass.teacherId !== session.id) return { error: 'That class is not yours to release.' }
+
+  await db.update(classes).set({ teacherId: null }).where(eq(classes.id, classId))
+  revalidatePath(`/teacher/programmes/${klass.programmeId}`)
+  revalidatePath('/teacher')
+  return { success: true }
 }
 
 export async function assignClassTeacher(classId: number, teacherId: number | null) {

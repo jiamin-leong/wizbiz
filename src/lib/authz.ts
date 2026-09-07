@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { competitions, competitionOrganizers, classes, programmes, groups, students, listings } from '@/db/schema'
+import { competitions, competitionOrganizers, classes, programmes, teachers, groups, students, listings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -169,6 +169,12 @@ export type ProgrammeAccess = {
   ownClassIds: number[]
 }
 
+/**
+ * Any approved teacher may look at a programme and claim an unassigned class;
+ * only the owner may change its shape. Opening a class's hackathon is a
+ * separate check, so browsing a programme does not expose another class's
+ * students.
+ */
 export async function getProgrammeAccess(
   programmeId: number,
   teacherId: number
@@ -179,15 +185,18 @@ export async function getProgrammeAccess(
     .where(eq(programmes.id, programmeId))
   if (!programme) return null
 
+  const [me] = await db
+    .select({ approvedAt: teachers.approvedAt })
+    .from(teachers)
+    .where(eq(teachers.id, teacherId))
+  if (!me?.approvedAt) return null
+
   const own = await db
     .select({ id: classes.id })
     .from(classes)
     .where(and(eq(classes.programmeId, programmeId), eq(classes.teacherId, teacherId)))
 
-  const isOwner = programme.ownerTeacherId === teacherId
-  if (!isOwner && own.length === 0) return null
-
-  return { isOwner, ownClassIds: own.map(c => c.id) }
+  return { isOwner: programme.ownerTeacherId === teacherId, ownClassIds: own.map(c => c.id) }
 }
 
 // ── Resolving a child record back to its competition ────────────────────────
