@@ -26,7 +26,7 @@ export default function CoOrganizers({
     setError('')
     const result = await addCoOrganizer(competitionId, email.trim())
     setAdding(false)
-    if (result?.error) {
+    if (result && 'error' in result) {
       setError(result.error)
     } else {
       setEmail('')

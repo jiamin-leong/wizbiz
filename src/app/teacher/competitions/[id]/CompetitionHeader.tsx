@@ -14,6 +14,7 @@ export default function CompetitionHeader({
   totalGroups,
   totalStudents,
   totalDays,
+  canEdit = true,
 }: {
   competition: {
     id: number
@@ -26,6 +27,7 @@ export default function CompetitionHeader({
   totalGroups: number
   totalStudents: number
   totalDays: number
+  canEdit?: boolean
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -50,7 +52,7 @@ export default function CompetitionHeader({
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
       <div className="flex justify-between items-start mb-5">
-        {editing ? (
+        {editing && canEdit ? (
           <input
             autoFocus
             value={name}
@@ -91,14 +93,14 @@ export default function CompetitionHeader({
                 Cancel
               </button>
             </>
-          ) : (
+          ) : canEdit ? (
             <button
               onClick={() => setEditing(true)}
               className="text-sm text-gray-500 hover:text-orange border border-gray-200 hover:border-ink/15 px-3 py-1.5 rounded-lg transition"
             >
               ✏ Edit
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

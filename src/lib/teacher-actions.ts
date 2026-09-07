@@ -7,23 +7,16 @@ import bcrypt from 'bcryptjs'
 import { getSession, createSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
+import { generateGroupPassword, shuffle } from '@/lib/credentials'
+import {
+  requireTeacher,
+  getCompetitionAccess,
+  competitionIdForGroup,
+  competitionIdForStudent,
+  competitionIdForListing,
+} from '@/lib/authz'
 
-const PASSWORD_WORDS = [
-  'BLAZE', 'STORM', 'FROST', 'EMBER', 'SPARK', 'FLARE', 'DRIFT', 'CREST',
-  'SURGE', 'NOVA', 'COMET', 'ORBIT', 'PULSE', 'PRISM', 'RIDGE', 'FORGE',
-  'VALE', 'PEAK', 'TIDE', 'REEF', 'GUST', 'MIST', 'BOLT', 'FLASH',
-  'IRON', 'GOLD', 'JADE', 'RUBY', 'ONYX', 'OPAL', 'FLINT', 'SLATE',
-]
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function generateGroupPassword(): string {
-  const word = PASSWORD_WORDS[Math.floor(Math.random() * PASSWORD_WORDS.length)]
-  const digits = String(Math.floor(Math.random() * 900) + 100)
-  return `${word}-${digits}`
-}
+const DENIED = { error: 'You do not have access to that competition.' }
 
 export async function createCompetition(formData: FormData) {
   const session = await getSession()
@@ -33,12 +26,13 @@ export async function createCompetition(formData: FormData) {
   const startDate = new Date(formData.get('startDate') as string)
   const endDate = new Date(formData.get('endDate') as string)
   const initialBalance = parseInt(formData.get('initialBalance') as string)
+  const personalStartingBalance = parseInt(formData.get('personalStartingBalance') as string) || 0
   const numGroups = parseInt(formData.get('numGroups') as string)
   const studentsPerGroup = Math.min(parseInt(formData.get('studentsPerGroup') as string), 20)
 
   const [competition] = await db
     .insert(competitions)
-    .values({ teacherId: session.id, name, startDate, endDate, initialBalance, status: 'active' })
+    .values({ teacherId: session.id, name, startDate, endDate, initialBalance, personalStartingBalance, status: 'active' })
     .returning()
 
   for (let g = 0; g < numGroups; g++) {
@@ -49,13 +43,21 @@ export async function createCompetition(formData: FormData) {
 
     const [group] = await db
       .insert(groups)
-      .values({ competitionId: competition.id, name: theme, balance: initialBalance, groupPassword, groupPasswordHash })
+      .values({
+        competitionId: competition.id,
+        name: theme,
+        balance: initialBalance,
+        startingCapital: initialBalance,
+        groupPassword,
+        groupPasswordHash,
+      })
       .returning()
 
     const studentCodes = items.map(item => ({
       groupId: group.id,
       loginCode: `${theme.toUpperCase()}-${item}`,
       passwordHash: groupPasswordHash,
+      personalBalance: personalStartingBalance,
     }))
 
     await db.insert(students).values(studentCodes)
@@ -68,10 +70,9 @@ export async function addCoOrganizer(competitionId: number, email: string) {
   const session = await getSession()
   if (!session || session.role !== 'teacher') redirect('/')
 
-  const [competition] = await db.select({ teacherId: competitions.teacherId })
-    .from(competitions)
-    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
-  if (!competition) return { error: 'Only the competition owner can add co-organisers' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManageOrganisers) return { error: 'Only the competition owner can add co-organisers' }
 
   const [teacher] = await db.select({ id: teachers.id, name: teachers.name })
     .from(teachers)
@@ -92,30 +93,34 @@ export async function removeCoOrganizer(competitionId: number, coTeacherId: numb
   const session = await getSession()
   if (!session || session.role !== 'teacher') redirect('/')
 
-  const [competition] = await db.select({ teacherId: competitions.teacherId })
-    .from(competitions)
-    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
-  if (!competition) return { error: 'Only the competition owner can remove co-organisers' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManageOrganisers) return { error: 'Only the competition owner can remove co-organisers' }
 
   await db.delete(competitionOrganizers)
     .where(and(eq(competitionOrganizers.competitionId, competitionId), eq(competitionOrganizers.teacherId, coTeacherId)))
 }
 
 export async function updateCompetition(competitionId: number, name: string, startDate: string, endDate: string) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot edit competition settings.' }
+
   await db
     .update(competitions)
     .set({ name, startDate: new Date(startDate), endDate: new Date(endDate) })
-    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
+    .where(eq(competitions.id, competitionId))
 }
 
 export async function previewAsStudent(groupId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
 
   const [group] = await db.select().from(groups).where(eq(groups.id, groupId))
   if (!group) return { error: 'Group not found' }
+
+  const access = await getCompetitionAccess(group.competitionId, session.id)
+  if (!access) return DENIED
 
   const [firstStudent] = await db.select({ id: students.id }).from(students).where(eq(students.groupId, groupId))
   if (!firstStudent) return { error: 'No students in this group yet' }
@@ -129,14 +134,26 @@ export async function previewAsStudent(groupId: number) {
 }
 
 export async function renameGroup(groupId: number, name: string) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+
+  const competitionId = await competitionIdForGroup(groupId)
+  if (!competitionId) return { error: 'Group not found' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot rename teams.' }
+
   await db.update(groups).set({ name }).where(eq(groups.id, groupId))
 }
 
 export async function removeStudent(studentId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+
+  const competitionId = await competitionIdForStudent(studentId)
+  if (!competitionId) return { error: 'Student not found' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot change the roster.' }
+
   try {
     await db.delete(students).where(eq(students.id, studentId))
   } catch {
@@ -145,11 +162,19 @@ export async function removeStudent(studentId: number) {
 }
 
 export async function addStudent(groupId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
 
   const [group] = await db.select().from(groups).where(eq(groups.id, groupId))
   if (!group) return { error: 'Group not found' }
+
+  const access = await getCompetitionAccess(group.competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot change the roster.' }
+
+  const [competition] = await db
+    .select({ personalStartingBalance: competitions.personalStartingBalance })
+    .from(competitions)
+    .where(eq(competitions.id, group.competitionId))
 
   const existingStudents = await db
     .select({ loginCode: students.loginCode })
@@ -178,6 +203,7 @@ export async function addStudent(groupId: number) {
     groupId,
     loginCode: `${themeUpper}-${unusedItem}`,
     passwordHash: group.groupPasswordHash,
+    personalBalance: competition?.personalStartingBalance ?? 0,
   })
 }
 
@@ -188,8 +214,13 @@ export async function updateListingStatus(
   editedDescription?: string,
   editedPrice?: number
 ) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+
+  const competitionId = await competitionIdForListing(listingId)
+  if (!competitionId) return { error: 'Listing not found' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canModerate) return DENIED
 
   const { listings } = await import('@/db/schema')
   await db
