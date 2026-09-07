@@ -12,7 +12,7 @@ import { revalidatePath } from 'next/cache'
 import { requireTeacher, getProgrammeAccess, getCompetitionAccess } from '@/lib/authz'
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
 import {
-  generateGroupPassword, shuffle,
+  generateGroupPassword, generateGroupPasswords, allocateLoginCodes,
   JUDGE_PANEL_NAME, JUDGE_CODES, DEFAULT_JUDGE_COUNT, DEFAULT_JUDGE_BALANCE,
 } from '@/lib/credentials'
 import { allocateGroups, allocationError, MAX_GROUPS_PER_CLASS } from '@/lib/allocation'
@@ -129,6 +129,14 @@ export async function launchRound1(programmeId: number, formData: FormData) {
   // Batched deliberately. Row-at-a-time inserts meant ~650 sequential round
   // trips to a database several thousand miles away, which took minutes; this
   // is a handful of multi-row statements per class instead.
+  // Login codes and passwords must both be unique across the whole programme:
+  // the code is the entire login, and the same 21 teams meet again in round 2.
+  const teamCount = classRows.reduce((n, k) => n + allocateGroups(k.headcount).length, 0)
+  const passwords = generateGroupPasswords(teamCount)
+  const usedCodes = new Set<string>()
+  const spareCodes = [...new Set(THEME_NAMES.flatMap(t => GROUP_THEMES[t]))]
+  let passwordIndex = 0
+
   const plan = classRows.map(klass => {
     const sizes = allocateGroups(klass.headcount)
     return {
@@ -138,8 +146,8 @@ export async function launchRound1(programmeId: number, formData: FormData) {
         return {
           theme,
           size,
-          password: generateGroupPassword(),
-          items: shuffle(GROUP_THEMES[theme]).slice(0, size),
+          password: passwords[passwordIndex++],
+          items: allocateLoginCodes(GROUP_THEMES[theme], size, usedCodes, spareCodes),
         }
       }),
     }
@@ -211,7 +219,7 @@ export async function launchRound1(programmeId: number, formData: FormData) {
         programmeId,
         classId: klass.id,
         teamId: teamIdByKey.get(`${klass.id}:${t.theme}`)!,
-        loginCode: `${t.theme.toUpperCase()}-${item}`,
+        loginCode: item,
         passwordHash: hashByPassword.get(t.password)!,
       })))
     ))
@@ -223,7 +231,7 @@ export async function launchRound1(programmeId: number, formData: FormData) {
   await db.insert(students).values(
     plan.flatMap(({ klass, teamPlans }) =>
       teamPlans.flatMap(t => t.items.map(item => {
-        const loginCode = `${t.theme.toUpperCase()}-${item}`
+        const loginCode = item
         return {
           groupId: groupIdByKey.get(`${competitionByClass.get(klass.id)!}:${t.theme}`)!,
           loginCode,

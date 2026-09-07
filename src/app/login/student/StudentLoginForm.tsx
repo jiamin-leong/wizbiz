@@ -24,7 +24,7 @@ export default function StudentLoginForm({ competitions }: { competitions: Compe
       <input
         name="loginCode"
         type="text"
-        placeholder="Login Code (e.g. FRUITS-APPLE)"
+        placeholder="Login code (e.g. BEAR)"
         required
         autoFocus
         className="border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal uppercase"
@@ -32,7 +32,7 @@ export default function StudentLoginForm({ competitions }: { competitions: Compe
       <input
         name="password"
         type="password"
-        placeholder="Password"
+        placeholder="Password (e.g. PULSE)"
         required
         className="border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
       />

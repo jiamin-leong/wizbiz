@@ -2,12 +2,12 @@
 
 import { db } from '@/db'
 import { competitions, groups, students, teachers, competitionOrganizers } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { getSession, createSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
-import { generateGroupPassword, shuffle } from '@/lib/credentials'
+import { generateGroupPasswords, allocateLoginCodes } from '@/lib/credentials'
 import {
   requireTeacher,
   getCompetitionAccess,
@@ -35,10 +35,14 @@ export async function createCompetition(formData: FormData) {
     .values({ teacherId: session.id, name, startDate, endDate, initialBalance, personalStartingBalance, status: 'active' })
     .returning()
 
+  const passwords = generateGroupPasswords(numGroups)
+  const usedCodes = new Set<string>()
+  const spareCodes = [...new Set(THEME_NAMES.flatMap(t => GROUP_THEMES[t]))]
+
   for (let g = 0; g < numGroups; g++) {
     const theme = THEME_NAMES[g % THEME_NAMES.length]
-    const items = shuffle(GROUP_THEMES[theme]).slice(0, studentsPerGroup)
-    const groupPassword = generateGroupPassword()
+    const items = allocateLoginCodes(GROUP_THEMES[theme], studentsPerGroup, usedCodes, spareCodes)
+    const groupPassword = passwords[g]
     const groupPasswordHash = await bcrypt.hash(groupPassword, 10)
 
     const [group] = await db
@@ -55,7 +59,7 @@ export async function createCompetition(formData: FormData) {
 
     const studentCodes = items.map(item => ({
       groupId: group.id,
-      loginCode: `${theme.toUpperCase()}-${item}`,
+      loginCode: item,
       passwordHash: groupPasswordHash,
       personalBalance: personalStartingBalance,
     }))
@@ -176,32 +180,35 @@ export async function addStudent(groupId: number) {
     .from(competitions)
     .where(eq(competitions.id, group.competitionId))
 
+  // Login codes are bare names, so a new one must not clash with any student
+  // in the whole competition, not just this group.
+  const siblingGroups = await db
+    .select({ id: groups.id })
+    .from(groups)
+    .where(eq(groups.competitionId, group.competitionId))
+
   const existingStudents = await db
     .select({ loginCode: students.loginCode })
     .from(students)
-    .where(eq(students.groupId, groupId))
+    .where(inArray(students.groupId, siblingGroups.map(g => g.id)))
 
-  const existingCodes = new Set(existingStudents.map(s => s.loginCode))
+  const usedCodes = new Set(existingStudents.map(s => s.loginCode))
 
-  // Infer theme from existing codes or fall back to group name
-  let themeName: string
-  if (existingStudents.length > 0) {
-    const themeUpper = existingStudents[0].loginCode.split('-')[0]
-    themeName = themeUpper[0] + themeUpper.slice(1).toLowerCase()
-  } else {
-    themeName = group.name
+  // The group is named after its theme; fall back to the full pool if it is
+  // exhausted or the group was renamed.
+  const themeItems = GROUP_THEMES[group.name] ?? []
+  const spareCodes = [...new Set(THEME_NAMES.flatMap(t => GROUP_THEMES[t]))]
+
+  let loginCode: string
+  try {
+    ;[loginCode] = allocateLoginCodes(themeItems, 1, usedCodes, spareCodes)
+  } catch {
+    return { error: 'No unused login codes remain in this competition.' }
   }
-
-  const items = GROUP_THEMES[themeName]
-  if (!items) return { error: 'Cannot determine theme for this group' }
-
-  const themeUpper = themeName.toUpperCase()
-  const unusedItem = items.find(item => !existingCodes.has(`${themeUpper}-${item}`))
-  if (!unusedItem) return { error: 'All slots are full for this group (maximum 20 participants)' }
 
   await db.insert(students).values({
     groupId,
-    loginCode: `${themeUpper}-${unusedItem}`,
+    loginCode,
     passwordHash: group.groupPasswordHash,
     personalBalance: competition?.personalStartingBalance ?? 0,
   })

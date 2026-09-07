@@ -121,7 +121,7 @@ export default function NewCompetitionPage() {
               </div>
             </div>
             <div className="bg-paper-2 border border-ink/15 rounded-lg px-4 py-3 text-sm text-orange-dark">
-              Each group will be automatically assigned a unique password (e.g. <span className="font-pixel text-xs">BLAZE-492</span>). You can find all group passwords on the competition page after creation.
+              Each group is assigned a unique one-word password (e.g. <span className="font-pixel text-xs">BLAZE</span>), and each student a one-word login code (e.g. <span className="font-pixel text-xs">BEAR</span>). You can find them all on the competition page after creation.
             </div>
             <button
               type="submit"
