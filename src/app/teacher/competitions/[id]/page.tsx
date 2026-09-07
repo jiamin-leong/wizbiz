@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { competitions, groups, students, competitionOrganizers, teachers, transfers, classes } from '@/db/schema'
+import { competitions, groups, students, transfers, classes } from '@/db/schema'
 import { eq, inArray, or } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -31,17 +31,13 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
 
   const groupIds = competitionGroups.map(g => g.id)
 
-  const [allStudents, coOrgRows, allTransfers, classRow] = await Promise.all([
+  const [allStudents, allTransfers, classRow] = await Promise.all([
     groupIds.length
       ? db.select({ id: students.id, loginCode: students.loginCode, groupId: students.groupId, personalBalance: students.personalBalance })
           .from(students)
           .where(inArray(students.groupId, groupIds))
           .orderBy(students.loginCode)
       : Promise.resolve([]),
-    db.select({ id: teachers.id, name: teachers.name, email: teachers.email })
-      .from(competitionOrganizers)
-      .innerJoin(teachers, eq(teachers.id, competitionOrganizers.teacherId))
-      .where(eq(competitionOrganizers.competitionId, competition.id)),
     groupIds.length
       ? db.select({ fromGroupId: transfers.fromGroupId, toGroupId: transfers.toGroupId, toStore: transfers.toStore, fromPersonal: transfers.fromPersonal, amount: transfers.amount })
           .from(transfers)
@@ -113,8 +109,6 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           initialBalance={competition.initialBalance}
           statements={statements}
           competitionId={competition.id}
-          coOrganizers={coOrgRows}
-          isOwner={access.canManageOrganisers}
           canManage={access.canManage}
           canAdvance={access.canAdvance && competition.round === 1 && competition.classId !== null}
           judgeCount={judges.length}

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import GroupsTable from './GroupsTable'
-import CoOrganizers from './CoOrganizers'
 import BusinessStatements from './BusinessStatements'
 import Standings from './Standings'
 import { type Statement } from '@/lib/standings'
@@ -16,17 +15,13 @@ type Group = {
   kind: 'team' | 'judges' | 'spectators'
   students: Student[]
 }
-type CoOrg = { id: number; name: string; email: string }
-
-type Tab = 'groups' | 'business' | 'standings' | 'settings'
+type Tab = 'groups' | 'business' | 'standings'
 
 export default function CompetitionTabs({
   groups,
   initialBalance,
   statements,
   competitionId,
-  coOrganizers,
-  isOwner,
   canManage,
   canAdvance,
   judgeCount,
@@ -36,8 +31,6 @@ export default function CompetitionTabs({
   initialBalance: number
   statements: Statement[]
   competitionId: number
-  coOrganizers: CoOrg[]
-  isOwner: boolean
   canManage: boolean
   canAdvance: boolean
   judgeCount: number
@@ -49,7 +42,6 @@ export default function CompetitionTabs({
     { key: 'groups', label: 'Groups' },
     { key: 'business', label: 'Financials' },
     { key: 'standings', label: 'Standings' },
-    { key: 'settings', label: 'Settings' },
   ]
 
   return (
@@ -85,13 +77,6 @@ export default function CompetitionTabs({
       )}
       {tab === 'standings' && (
         <Standings statements={statements} competitionId={competitionId} canAdvance={canAdvance} />
-      )}
-      {tab === 'settings' && (
-        <CoOrganizers
-          competitionId={competitionId}
-          coOrganizers={coOrganizers}
-          isOwner={isOwner}
-        />
       )}
     </div>
   )

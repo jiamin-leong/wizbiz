@@ -3,7 +3,7 @@
 import { db } from '@/db'
 import {
   programmes, classes, teams, participants,
-  competitions, groups, students, transfers, teachers, competitionOrganizers,
+  competitions, groups, students, transfers, teachers,
 } from '@/db/schema'
 import { eq, and, inArray, isNotNull, isNull } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
@@ -273,14 +273,6 @@ async function runLaunch(
     .returning({ id: competitions.id, classId: competitions.classId })
 
   const competitionByClass = new Map(createdCompetitions.map(c => [c.classId, c.id]))
-
-  // The programme owner co-organises every class so they can moderate.
-  const organiserRows = plan
-    .filter(({ klass }) => klass.teacherId && klass.teacherId !== ownerTeacherId)
-    .map(({ klass }) => ({ competitionId: competitionByClass.get(klass.id)!, teacherId: ownerTeacherId }))
-  if (organiserRows.length > 0) {
-    await db.insert(competitionOrganizers).values(organiserRows)
-  }
 
   const createdTeams = await db
     .insert(teams)
@@ -564,20 +556,8 @@ export async function createMasterHackathon(programmeId: number, formData: FormD
     })
     .returning()
 
-  // Every class teacher moderates the final — one approval queue for ~130
-  // students is otherwise a single point of failure.
-  const classTeachers = await db
-    .select({ teacherId: classes.teacherId })
-    .from(classes)
-    .where(eq(classes.programmeId, programmeId))
-  const coOrganiserIds = [...new Set(
-    classTeachers.map(c => c.teacherId).filter((id): id is number => id !== null && id !== session.id)
-  )]
-  if (coOrganiserIds.length > 0) {
-    await db.insert(competitionOrganizers).values(
-      coOrganiserIds.map(teacherId => ({ competitionId: master.id, teacherId }))
-    )
-  }
+  // Every class teacher in the programme can moderate the final; that is
+  // granted by getCompetitionAccess rather than stored per competition.
 
   for (const source of qualifiedGroups) {
     const members = await db

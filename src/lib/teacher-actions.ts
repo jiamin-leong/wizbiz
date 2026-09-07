@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/db'
-import { competitions, groups, students, teachers, competitionOrganizers } from '@/db/schema'
+import { competitions, groups, students, teachers } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { getSession, createSession } from '@/lib/auth'
@@ -70,40 +70,7 @@ export async function createCompetition(formData: FormData) {
   redirect(`/teacher/competitions/${competition.id}`)
 }
 
-export async function addCoOrganizer(competitionId: number, email: string) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
 
-  const access = await getCompetitionAccess(competitionId, session.id)
-  if (!access) return DENIED
-  if (!access.canManageOrganisers) return { error: 'Only the competition owner can add co-organisers' }
-
-  const [teacher] = await db.select({ id: teachers.id, name: teachers.name })
-    .from(teachers)
-    .where(eq(teachers.email, email.toLowerCase().trim()))
-  if (!teacher) return { error: 'No teacher account found with that email' }
-  if (teacher.id === session.id) return { error: 'You are already the owner' }
-
-  const [existing] = await db.select({ id: competitionOrganizers.id })
-    .from(competitionOrganizers)
-    .where(and(eq(competitionOrganizers.competitionId, competitionId), eq(competitionOrganizers.teacherId, teacher.id)))
-  if (existing) return { error: `${teacher.name} is already a co-organiser` }
-
-  await db.insert(competitionOrganizers).values({ competitionId, teacherId: teacher.id })
-  return { success: true }
-}
-
-export async function removeCoOrganizer(competitionId: number, coTeacherId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
-
-  const access = await getCompetitionAccess(competitionId, session.id)
-  if (!access) return DENIED
-  if (!access.canManageOrganisers) return { error: 'Only the competition owner can remove co-organisers' }
-
-  await db.delete(competitionOrganizers)
-    .where(and(eq(competitionOrganizers.competitionId, competitionId), eq(competitionOrganizers.teacherId, coTeacherId)))
-}
 
 export async function updateCompetition(competitionId: number, name: string, startDate: string, endDate: string) {
   const session = await requireTeacher()

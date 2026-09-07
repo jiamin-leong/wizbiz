@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { teachers, competitions, competitionOrganizers, programmes, classes } from '@/db/schema'
+import { teachers, competitions, programmes, classes } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { competitionStatus } from '@/lib/competition'
 import TeacherShell from './TeacherShell'
@@ -12,10 +12,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   if (!session || session.role !== 'teacher') redirect('/')
 
   // The sidebar lists competitions this teacher is responsible for: ones they
-  // own, ones they co-organise, and the hackathon of any class they teach —
+  // own and the hackathon of any class they teach —
   // so a claimed class shows up here. Browsing another class's hackathon
   // happens from the programme page and deliberately does not list here.
-  const [teacher, ownedComps, coOrgComps, myClassComps, allProgrammeComps] = await Promise.all([
+  const [teacher, ownedComps, myClassComps, allProgrammeComps] = await Promise.all([
     db.select({ name: teachers.name, email: teachers.email, isAdmin: teachers.isAdmin, approvedAt: teachers.approvedAt })
       .from(teachers)
       .where(eq(teachers.id, session.id))
@@ -23,11 +23,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     db.select({ id: competitions.id, name: competitions.name, startDate: competitions.startDate, endDate: competitions.endDate })
       .from(competitions)
       .where(eq(competitions.teacherId, session.id))
-      .orderBy(desc(competitions.createdAt)),
-    db.select({ id: competitions.id, name: competitions.name, startDate: competitions.startDate, endDate: competitions.endDate })
-      .from(competitionOrganizers)
-      .innerJoin(competitions, eq(competitions.id, competitionOrganizers.competitionId))
-      .where(eq(competitionOrganizers.teacherId, session.id))
       .orderBy(desc(competitions.createdAt)),
     db.select({ id: competitions.id, name: competitions.name, startDate: competitions.startDate, endDate: competitions.endDate })
       .from(competitions)
@@ -74,7 +69,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   })
 
   const seen = new Set<number>()
-  const allCompetitions = [...ownedComps, ...coOrgComps, ...myClassComps].filter(c => {
+  const allCompetitions = [...ownedComps, ...myClassComps].filter(c => {
     if (seen.has(c.id)) return false
     seen.add(c.id)
     return true

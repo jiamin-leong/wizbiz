@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { competitions, competitionOrganizers, classes, programmes, teachers, groups, students, listings } from '@/db/schema'
+import { competitions, classes, programmes, teachers, groups, students, listings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -31,7 +31,7 @@ export type CompetitionRole =
   | 'owner'
   | 'programme-owner'
   | 'class-teacher'
-  | 'co-organiser'
+  | 'programme-moderator'
   | 'programme-viewer'
 
 export type CompetitionAccess = {
@@ -42,7 +42,7 @@ export type CompetitionAccess = {
   canModerate: boolean
   /** Confirm which teams advance to round 2. */
   canAdvance: boolean
-  /** Add and remove co-organisers. */
+  /** Edit the competition itself: dates, name. */
   canManageOrganisers: boolean
   programmeId: number | null
   classId: number | null
@@ -53,7 +53,7 @@ const ROLE_LABELS: Record<CompetitionRole, string> = {
   'owner': 'Owner',
   'programme-owner': 'Programme owner',
   'class-teacher': 'Class teacher',
-  'co-organiser': 'Co-organiser',
+  'programme-moderator': 'Moderating',
   'programme-viewer': 'Viewing',
 }
 
@@ -118,34 +118,35 @@ export async function getCompetitionAccess(
     if (klass?.teacherId === teacherId) return full('class-teacher')
   }
 
-  const [coOrg] = await db
-    .select({ id: competitionOrganizers.id })
-    .from(competitionOrganizers)
-    .where(and(
-      eq(competitionOrganizers.competitionId, competitionId),
-      eq(competitionOrganizers.teacherId, teacherId)
-    ))
-
-  if (coOrg) {
-    return {
-      ...base,
-      role: 'co-organiser',
-      canManage: false,
-      canModerate: true,
-      canAdvance: false,
-      canManageOrganisers: false,
-    }
-  }
-
-  // Any approved teacher may look into another class's hackathon in a
-  // programme, but read-only: they cannot touch a colleague's roster,
-  // marketplace or advancement decision.
   if (competition.programmeId) {
     const [me] = await db
       .select({ approvedAt: teachers.approvedAt })
       .from(teachers)
       .where(eq(teachers.id, teacherId))
+
     if (me?.approvedAt) {
+      // The final belongs to no class, so nobody can claim it. Every teacher
+      // with a class in the programme shares its marketplace queue instead —
+      // one person approving for ~130 students is a bottleneck and a single
+      // point of failure on the day.
+      const [teachesHere] = await db
+        .select({ id: classes.id })
+        .from(classes)
+        .where(and(eq(classes.programmeId, competition.programmeId), eq(classes.teacherId, teacherId)))
+
+      if (competition.round === 2 && teachesHere) {
+        return {
+          ...base,
+          role: 'programme-moderator',
+          canManage: false,
+          canModerate: true,
+          canAdvance: false,
+          canManageOrganisers: false,
+        }
+      }
+
+      // Otherwise a teacher may look into another class's hackathon, but
+      // read-only: no touching a colleague's roster or advancement decision.
       return {
         ...base,
         role: 'programme-viewer',
@@ -162,7 +163,7 @@ export async function getCompetitionAccess(
 
 /** Competition ids this teacher can see: owned, programme-owned, class-taught, co-organised. */
 export async function visibleCompetitionIds(teacherId: number): Promise<number[]> {
-  const [owned, viaProgramme, viaClass, viaCoOrg] = await Promise.all([
+  const [owned, viaProgramme, viaClass] = await Promise.all([
     db.select({ id: competitions.id }).from(competitions).where(eq(competitions.teacherId, teacherId)),
     db.select({ id: competitions.id })
       .from(competitions)
@@ -172,16 +173,12 @@ export async function visibleCompetitionIds(teacherId: number): Promise<number[]
       .from(competitions)
       .innerJoin(classes, eq(classes.id, competitions.classId))
       .where(eq(classes.teacherId, teacherId)),
-    db.select({ id: competitionOrganizers.competitionId })
-      .from(competitionOrganizers)
-      .where(eq(competitionOrganizers.teacherId, teacherId)),
   ])
 
   const ids = new Set<number>()
   for (const r of owned) ids.add(r.id)
   for (const r of viaProgramme) ids.add(r.id)
   for (const r of viaClass) ids.add(r.id)
-  for (const r of viaCoOrg) ids.add(r.id)
   return [...ids]
 }
 
