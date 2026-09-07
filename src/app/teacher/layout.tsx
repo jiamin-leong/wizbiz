@@ -11,7 +11,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const session = await getSession()
   if (!session || session.role !== 'teacher') redirect('/')
 
-  const [teacher, ownedComps, coOrgComps] = await Promise.all([
+  // The sidebar lists competitions this teacher is responsible for: ones they
+  // own, ones they co-organise, and the hackathon of any class they teach —
+  // so a claimed class shows up here. Browsing another class's hackathon
+  // happens from the programme page and deliberately does not list here.
+  const [teacher, ownedComps, coOrgComps, myClassComps] = await Promise.all([
     db.select({ name: teachers.name, email: teachers.email, isAdmin: teachers.isAdmin, approvedAt: teachers.approvedAt })
       .from(teachers)
       .where(eq(teachers.id, session.id))
@@ -24,6 +28,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       .from(competitionOrganizers)
       .innerJoin(competitions, eq(competitions.id, competitionOrganizers.competitionId))
       .where(eq(competitionOrganizers.teacherId, session.id))
+      .orderBy(desc(competitions.createdAt)),
+    db.select({ id: competitions.id, name: competitions.name, startDate: competitions.startDate, endDate: competitions.endDate })
+      .from(competitions)
+      .innerJoin(classes, eq(classes.id, competitions.classId))
+      .where(eq(classes.teacherId, session.id))
       .orderBy(desc(competitions.createdAt)),
   ])
 
@@ -56,7 +65,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   })
 
   const seen = new Set<number>()
-  const allCompetitions = [...ownedComps, ...coOrgComps].filter(c => {
+  const allCompetitions = [...ownedComps, ...coOrgComps, ...myClassComps].filter(c => {
     if (seen.has(c.id)) return false
     seen.add(c.id)
     return true

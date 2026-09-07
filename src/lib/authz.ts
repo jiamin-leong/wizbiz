@@ -32,6 +32,7 @@ export type CompetitionRole =
   | 'programme-owner'
   | 'class-teacher'
   | 'co-organiser'
+  | 'programme-viewer'
 
 export type CompetitionAccess = {
   role: CompetitionRole
@@ -53,6 +54,7 @@ const ROLE_LABELS: Record<CompetitionRole, string> = {
   'programme-owner': 'Programme owner',
   'class-teacher': 'Class teacher',
   'co-organiser': 'Co-organiser',
+  'programme-viewer': 'Viewing',
 }
 
 export function roleLabel(role: CompetitionRole): string {
@@ -132,6 +134,26 @@ export async function getCompetitionAccess(
       canModerate: true,
       canAdvance: false,
       canManageOrganisers: false,
+    }
+  }
+
+  // Any approved teacher may look into another class's hackathon in a
+  // programme, but read-only: they cannot touch a colleague's roster,
+  // marketplace or advancement decision.
+  if (competition.programmeId) {
+    const [me] = await db
+      .select({ approvedAt: teachers.approvedAt })
+      .from(teachers)
+      .where(eq(teachers.id, teacherId))
+    if (me?.approvedAt) {
+      return {
+        ...base,
+        role: 'programme-viewer',
+        canManage: false,
+        canModerate: false,
+        canAdvance: false,
+        canManageOrganisers: false,
+      }
     }
   }
 
