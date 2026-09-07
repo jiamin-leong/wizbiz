@@ -48,8 +48,9 @@ export default function NewProgrammePage() {
       <div className="bg-white rounded-2xl shadow-md p-8">
         <h1 className="text-2xl font-bold text-orange mb-1">New Programme</h1>
         <p className="text-sm text-gray-500 mb-6">
-          A programme runs several classes through round 1 in parallel, then the top {3} teams
-          from each class meet in one final.
+          A programme runs several classes through round 1 in parallel, then the top 3 teams from
+          each class meet in one final. Creating it launches round 1 straight away, with all the
+          teams and student logins.
         </p>
 
         <form action={handleSubmit} className="flex flex-col gap-5">
@@ -125,10 +126,36 @@ export default function NewProgrammePage() {
             </button>
           </div>
 
+          <div>
+            <p className="text-sm font-medium text-gray-600 mb-1">Round 1 dates</p>
+            <p className="text-xs text-gray-400 mb-3">
+              Every class runs over the same dates, so the classes stay comparable.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-3">
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Start date</label>
+                <input name="startDate" type="date" required
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">End date</label>
+                <input name="endDate" type="date" required
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal" />
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-paper-2 border border-ink/15 px-4 py-3 text-sm text-ink-soft">
+              Every team starts with <span className="font-semibold text-orange-dark">1,000</span> business
+              capital and every student with <span className="font-semibold text-teal-dark">50</span> in their
+              personal wallet. You can change both when you launch.
+            </div>
+          </div>
+
           {filled.length > 0 && (
             <div className="bg-paper-2 border border-ink/15 rounded-lg px-4 py-3 text-sm text-gray-700">
-              <b>{filled.length}</b> classes · <b>{totalStudents}</b> students ·{' '}
-              <b>{totalGroups}</b> teams in round 1 · <b>{filled.length * 3}</b> teams in the final
+              Creates <b>{filled.length}</b> class hackathons, <b>{totalGroups}</b> teams and{' '}
+              <b>{totalStudents}</b> student logins. <b>{filled.length * 3}</b> teams reach the final.
             </div>
           )}
 
@@ -139,7 +166,7 @@ export default function NewProgrammePage() {
             disabled={submitting || filled.length === 0}
             className="btn-metal btn-orange py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Creating…' : 'Create programme'}
+            {submitting ? 'Creating teams and logins…' : 'Create programme and launch round 1'}
           </button>
         </form>
       </div>

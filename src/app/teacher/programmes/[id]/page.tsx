@@ -11,7 +11,6 @@ import { competitionStatus } from '@/lib/competition'
 import LaunchRound1Form from './LaunchRound1Form'
 import CreateFinalForm from './CreateFinalForm'
 import ClassTeacherField from './ClassTeacherField'
-import ClaimClassButton from './ClaimClassButton'
 
 export default async function ProgrammePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -110,8 +109,8 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Stat label="Classes" value={allClasses.length} />
           <Stat label="Students" value={totalStudents} />
-          <Stat label="Round 1 teams" value={launched ? Object.values(teamCountMap).reduce((a, b) => a + b, 0) : totalTeams} />
-          <Stat label="Finalists" value={allClasses.length * ADVANCING_PER_CLASS} />
+          <Stat label="Total teams" value={launched ? Object.values(teamCountMap).reduce((a, b) => a + b, 0) : totalTeams} />
+          <Stat label="Finalist teams" value={allClasses.length * ADVANCING_PER_CLASS} />
         </div>
       </div>
 
@@ -126,7 +125,18 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
       </div>
 
       {!launched && access.isOwner && (
-        <LaunchRound1Form programmeId={programmeId} classCount={allClasses.length} />
+        <LaunchRound1Form
+          programmeId={programmeId}
+          classCount={allClasses.length}
+          teamCount={totalTeams}
+          studentCount={totalStudents}
+          settings={{
+            startDate: programme.startDate,
+            endDate: programme.endDate,
+            groupCapital: programme.groupCapital,
+            personalStartingBalance: programme.personalStartingBalance,
+          }}
+        />
       )}
       {!launched && !access.isOwner && (
         <div className="bg-white rounded-xl p-6 text-sm text-gray-400 shadow-sm mb-6">
@@ -178,16 +188,12 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* One click to take a free class; the dropdown does the rest. */}
-                    {klass.teacherId === null && (
-                      <ClaimClassButton classId={klass.id} className={klass.name} mine={false} />
-                    )}
                     <ClassTeacherField
                       classId={klass.id}
                       currentTeacherId={klass.teacherId}
                       teachers={teacherRows}
                     />
-                    {comp && (access.isOwner || klass.teacherId === session.id) && (
+                    {comp && (
                       <Link
                         href={`/teacher/competitions/${comp.id}`}
                         className="text-sm font-medium text-orange border border-ink/15 bg-white hover:border-orange px-3 py-1.5 rounded-lg transition"

@@ -23,14 +23,26 @@ import { computeStatements, rankStatements, ADVANCING_PER_CLASS } from '@/lib/st
 // unique when 21 teams from 7 classes meet in the round 2 final.
 const MAX_CLASSES = Math.floor(THEME_NAMES.length / MAX_GROUPS_PER_CLASS)
 
+// A 'use server' module may only export async functions, so these stay local.
+const DEFAULT_GROUP_CAPITAL = 1000
+const DEFAULT_PERSONAL_BALANCE = 50
+
 export async function createProgramme(formData: FormData) {
   const session = await requireAdminTeacher()
 
   const name = ((formData.get('name') as string) ?? '').trim()
   const classNames = formData.getAll('className').map(v => String(v).trim())
   const headcounts = formData.getAll('headcount').map(v => parseInt(String(v)))
+  const startDate = new Date(formData.get('startDate') as string)
+  const endDate = new Date(formData.get('endDate') as string)
+  // Standard for every programme; changeable at launch if a run needs different
+  // numbers, so setting one up only asks for the dates.
+  const groupCapital = DEFAULT_GROUP_CAPITAL
+  const personalStartingBalance = DEFAULT_PERSONAL_BALANCE
 
   if (!name) return { error: 'Give the programme a name.' }
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return { error: 'Pick a start and end date.' }
+  if (endDate < startDate) return { error: 'The end date cannot be before the start date.' }
 
   const rows = classNames
     .map((n, i) => ({ name: n, headcount: headcounts[i] }))
@@ -48,7 +60,14 @@ export async function createProgramme(formData: FormData) {
 
   const [programme] = await db
     .insert(programmes)
-    .values({ ownerTeacherId: session.id, name })
+    .values({
+      ownerTeacherId: session.id,
+      name,
+      startDate,
+      endDate,
+      groupCapital,
+      personalStartingBalance,
+    })
     .returning()
 
   await db.insert(classes).values(
@@ -59,6 +78,13 @@ export async function createProgramme(formData: FormData) {
       themeOffset: i * MAX_GROUPS_PER_CLASS,
     }))
   )
+
+  // Launch straight away: a programme with classes but no teams is not usable
+  // for anything, so the extra confirmation step only got in the way.
+  const launched = await runLaunch(programme.id, session.id, {
+    startDate, endDate, groupCapital, personalStartingBalance,
+  })
+  if ('error' in launched) return launched
 
   redirect(`/teacher/programmes/${programme.id}`)
 }
@@ -164,25 +190,26 @@ export async function assignClassTeacher(classId: number, teacherId: number | nu
   return { success: true, name: teacher.name }
 }
 
+type LaunchSettings = {
+  startDate: Date
+  endDate: Date
+  groupCapital: number
+  personalStartingBalance: number
+}
+
 /**
- * Launch round 1: one competition per class, all sharing the same rules.
+ * Creates round 1: one competition per class, all sharing the same rules.
  * Teams, groups, participants and students are all created here, so credentials
  * are issued exactly once for the whole programme and stay valid in round 2.
+ *
+ * Shared by programme creation, which launches immediately, and by the launch
+ * button on a programme that has classes but no round yet.
  */
-export async function launchRound1(programmeId: number, formData: FormData) {
-  const session = await requireTeacher()
-  const access = await getProgrammeAccess(programmeId, session.id)
-  if (!access?.isOwner) return { error: 'Only the programme owner can launch round 1.' }
-
-  const startDate = new Date(formData.get('startDate') as string)
-  const endDate = new Date(formData.get('endDate') as string)
-  const groupCapital = parseInt(formData.get('groupCapital') as string)
-  const personalStartingBalance = parseInt(formData.get('personalStartingBalance') as string) || 0
-
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return { error: 'Pick a start and end date.' }
-  if (endDate < startDate) return { error: 'The end date cannot be before the start date.' }
-  if (!groupCapital || groupCapital < 1) return { error: 'Set the starting business capital.' }
-
+async function runLaunch(
+  programmeId: number,
+  ownerTeacherId: number,
+  { startDate, endDate, groupCapital, personalStartingBalance }: LaunchSettings
+): Promise<{ error: string } | { success: true }> {
   const classRows = await db
     .select()
     .from(classes)
@@ -232,7 +259,7 @@ export async function launchRound1(programmeId: number, formData: FormData) {
   const createdCompetitions = await db
     .insert(competitions)
     .values(plan.map(({ klass }) => ({
-      teacherId: klass.teacherId ?? session.id,
+      teacherId: klass.teacherId ?? ownerTeacherId,
       name: klass.name,
       startDate,
       endDate,
@@ -249,8 +276,8 @@ export async function launchRound1(programmeId: number, formData: FormData) {
 
   // The programme owner co-organises every class so they can moderate.
   const organiserRows = plan
-    .filter(({ klass }) => klass.teacherId && klass.teacherId !== session.id)
-    .map(({ klass }) => ({ competitionId: competitionByClass.get(klass.id)!, teacherId: session.id }))
+    .filter(({ klass }) => klass.teacherId && klass.teacherId !== ownerTeacherId)
+    .map(({ klass }) => ({ competitionId: competitionByClass.get(klass.id)!, teacherId: ownerTeacherId }))
   if (organiserRows.length > 0) {
     await db.insert(competitionOrganizers).values(organiserRows)
   }
@@ -313,6 +340,45 @@ export async function launchRound1(programmeId: number, formData: FormData) {
       }))
     )
   )
+
+  await db
+    .update(programmes)
+    .set({ startDate, endDate, groupCapital, personalStartingBalance })
+    .where(eq(programmes.id, programmeId))
+
+  return { success: true }
+}
+
+/** Launch a programme that has classes but no round 1 yet. */
+export async function launchRound1(programmeId: number, formData: FormData) {
+  const session = await requireTeacher()
+  const access = await getProgrammeAccess(programmeId, session.id)
+  if (!access?.isOwner) return { error: 'Only the programme owner can launch round 1.' }
+
+  const [programme] = await db.select().from(programmes).where(eq(programmes.id, programmeId))
+  if (!programme) return { error: 'That programme no longer exists.' }
+
+  // Stored when the programme was created; the form may still override.
+  const rawStart = (formData.get('startDate') as string) ?? ''
+  const rawEnd = (formData.get('endDate') as string) ?? ''
+  const rawCapital = (formData.get('groupCapital') as string) ?? ''
+  const rawPersonal = (formData.get('personalStartingBalance') as string) ?? ''
+
+  const startDate = rawStart ? new Date(rawStart) : programme.startDate
+  const endDate = rawEnd ? new Date(rawEnd) : programme.endDate
+  const groupCapital = rawCapital ? parseInt(rawCapital) : programme.groupCapital
+  const personalStartingBalance = rawPersonal ? parseInt(rawPersonal) : (programme.personalStartingBalance ?? 0)
+
+  if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return { error: 'This programme has no dates set. Edit them before launching.' }
+  }
+  if (endDate < startDate) return { error: 'The end date cannot be before the start date.' }
+  if (!groupCapital || groupCapital < 1) return { error: 'This programme has no starting capital set.' }
+
+  const result = await runLaunch(programmeId, session.id, {
+    startDate, endDate, groupCapital, personalStartingBalance,
+  })
+  if ('error' in result) return result
 
   revalidatePath(`/teacher/programmes/${programmeId}`)
   redirect(`/teacher/programmes/${programmeId}`)

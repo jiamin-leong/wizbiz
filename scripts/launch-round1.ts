@@ -3,16 +3,12 @@ import { programmes, classes, competitions, groups, students, teams, participant
 import { eq, and, inArray, sql } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { GROUP_THEMES, THEME_NAMES } from '../src/lib/themes'
-import { generateGroupPassword, shuffle } from '../src/lib/credentials'
+import { generateGroupPasswords, allocateLoginCodes } from '../src/lib/credentials'
 import { allocateGroups } from '../src/lib/allocation'
 
 // Mirrors launchRound1 in src/lib/programme-actions.ts, for launching from the
 // command line. Same batched inserts.
-const PROGRAMME_ID = 1
-const START_DATE = new Date('2026-10-06')
-const END_DATE = new Date('2026-10-08')
-const GROUP_CAPITAL = 1000
-const PERSONAL_STARTING_BALANCE = 50
+const PROGRAMME_ID = Number(process.argv[2]) || 1
 
 async function main() {
   const t0 = Date.now()
@@ -20,17 +16,35 @@ async function main() {
   const [programme] = await db.select().from(programmes).where(eq(programmes.id, PROGRAMME_ID))
   if (!programme) throw new Error(`No programme ${PROGRAMME_ID}`)
 
+  // Settings live on the programme now.
+  const START_DATE = programme.startDate ?? new Date()
+  const END_DATE = programme.endDate ?? new Date()
+  const GROUP_CAPITAL = programme.groupCapital ?? 1000
+  const PERSONAL_STARTING_BALANCE = programme.personalStartingBalance ?? 50
+
   const already = await db.select({ id: competitions.id }).from(competitions)
     .where(and(eq(competitions.programmeId, PROGRAMME_ID), eq(competitions.round, 1)))
   if (already.length > 0) throw new Error('Round 1 already launched — reset it first.')
 
   const classRows = await db.select().from(classes).where(eq(classes.programmeId, PROGRAMME_ID)).orderBy(classes.id)
 
+  // Same uniqueness rules as the app: one-word codes unique across the
+  // programme, and a distinct password per team.
+  const teamCount = classRows.reduce((n, k) => n + allocateGroups(k.headcount).length, 0)
+  const passwords = generateGroupPasswords(teamCount)
+  const usedCodes = new Set<string>()
+  const spareCodes = [...new Set(THEME_NAMES.flatMap(t => GROUP_THEMES[t]))]
+  let pi = 0
+
   const plan = classRows.map(klass => ({
     klass,
     teamPlans: allocateGroups(klass.headcount).map((size, i) => {
       const theme = THEME_NAMES[(klass.themeOffset + i) % THEME_NAMES.length]
-      return { theme, size, password: generateGroupPassword(), items: shuffle(GROUP_THEMES[theme]).slice(0, size) }
+      return {
+        theme, size,
+        password: passwords[pi++],
+        items: allocateLoginCodes(GROUP_THEMES[theme], size, usedCodes, spareCodes),
+      }
     }),
   }))
 
@@ -67,7 +81,7 @@ async function main() {
     plan.flatMap(({ klass, teamPlans }) => teamPlans.flatMap(t => t.items.map(item => ({
       programmeId: PROGRAMME_ID, classId: klass.id,
       teamId: teamIdByKey.get(`${klass.id}:${t.theme}`)!,
-      loginCode: `${t.theme.toUpperCase()}-${item}`,
+      loginCode: item,
       passwordHash: hashByPassword.get(t.password)!,
     }))))
   ).returning({ id: participants.id, loginCode: participants.loginCode })
@@ -75,7 +89,7 @@ async function main() {
 
   await db.insert(students).values(
     plan.flatMap(({ klass, teamPlans }) => teamPlans.flatMap(t => t.items.map(item => {
-      const loginCode = `${t.theme.toUpperCase()}-${item}`
+      const loginCode = item
       return {
         groupId: groupIdByKey.get(`${competitionByClass.get(klass.id)!}:${t.theme}`)!,
         loginCode, passwordHash: hashByPassword.get(t.password)!,

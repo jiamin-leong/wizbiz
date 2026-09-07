@@ -51,6 +51,13 @@ export const programmes = pgTable('programmes', {
   id: serial('id').primaryKey(),
   ownerTeacherId: integer('owner_teacher_id').references(() => teachers.id).notNull(),
   name: text('name').notNull(),
+  // The round 1 rules, captured when the programme is set up so launching is a
+  // confirmation rather than a second round of data entry. Nullable for
+  // programmes created before they were asked for here.
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  groupCapital: integer('group_capital'),
+  personalStartingBalance: integer('personal_starting_balance'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
