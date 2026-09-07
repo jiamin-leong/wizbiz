@@ -21,7 +21,7 @@ const silkscreen = Silkscreen({
 
 export const metadata: Metadata = {
   title: "WizBiz — Learn to earn. Build to win.",
-  description: "A classroom economy game where student groups earn, trade, and build.",
+  description: "A classroom economy game where student teams earn, trade, and build.",
 };
 
 export default function RootLayout({

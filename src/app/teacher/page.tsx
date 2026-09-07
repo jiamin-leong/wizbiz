@@ -195,7 +195,7 @@ export default async function TeacherDashboard() {
                   <p className="text-sm text-orange">{duration(new Date(c.startDate), new Date(c.endDate))}</p>
                 </div>
                 <div className="border-l border-gray-100 pl-6">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Groups</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Teams</p>
                   <p className="font-display text-2xl font-bold text-orange tabular-nums">{groupCountMap[c.id] ?? 0}</p>
                 </div>
                 <div className="border-l border-gray-100 pl-6">

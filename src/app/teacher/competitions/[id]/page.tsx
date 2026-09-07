@@ -102,6 +102,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           totalStudents={totalStudents}
           totalDays={totalDays}
           canEdit={access.canManage}
+          isFinal={competition.round === 2}
         />
 
         <CompetitionTabs

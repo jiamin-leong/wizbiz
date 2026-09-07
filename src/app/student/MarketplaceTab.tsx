@@ -157,7 +157,7 @@ export default function MarketplaceTab({
       <div className="text-center py-16 text-gray-400">
         <p className="text-4xl mb-3">🏪</p>
         <p className="font-medium">No listings available yet</p>
-        <p className="text-sm mt-1">Check back once other groups post their items!</p>
+        <p className="text-sm mt-1">Check back once other teams post their items!</p>
       </div>
     )
   }

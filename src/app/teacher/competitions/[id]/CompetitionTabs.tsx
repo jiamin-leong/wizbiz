@@ -35,7 +35,7 @@ export default function CompetitionTabs({
   const [tab, setTab] = useState<Tab>('groups')
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'groups', label: 'Groups' },
+    { key: 'groups', label: 'Teams' },
     { key: 'business', label: 'Financials' },
     { key: 'standings', label: 'Standings' },
   ]

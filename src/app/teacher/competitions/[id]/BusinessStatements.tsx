@@ -11,7 +11,7 @@ export default function BusinessStatements({ statements }: { statements: Stateme
     : [...statements].sort((a, b) => a.name.localeCompare(b.name))
 
   if (statements.length === 0) {
-    return <p className="text-sm text-gray-400">No groups yet.</p>
+    return <p className="text-sm text-gray-400">No teams yet.</p>
   }
 
   const filterBtn = (n: number | null, label: string) =>
@@ -39,14 +39,14 @@ export default function BusinessStatements({ statements }: { statements: Stateme
         </div>
       </div>
       <div className="mb-4 max-w-2xl rounded-lg bg-white border border-gray-100 px-4 py-3 text-sm text-ink-soft leading-relaxed">
-        <p className="mb-1">Each group is a business.</p>
+        <p className="mb-1">Each team is a business.</p>
         <ul className="space-y-0.5">
           <li><span className="font-semibold text-teal-dark">Revenue</span> — WizCoins received from customers.</li>
           <li><span className="font-semibold text-red-500">Business expenses</span> — payments to MAIN STORE.</li>
           <li><span className="font-semibold text-gray-800">Profit / Loss</span> — cash on hand minus starting capital.</li>
         </ul>
         <li><span className="font-semibold text-gray-800">Profit per member</span> — shown for context; teams are ranked on profit.</li>
-        {topN && <p className="mt-2 font-medium text-gray-700">Showing the top {topN} groups by profit.</p>}
+        {topN && <p className="mt-2 font-medium text-gray-700">Showing the top {topN} teams by profit.</p>}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -66,7 +66,7 @@ export default function BusinessStatements({ statements }: { statements: Stateme
                 <div className="my-2 border-t border-gray-100" />
                 <Row label="Revenue (money in)" value={s.revenue} tone="pos" />
                 {s.expenseToGroups > 0 && (
-                  <Row label="Expenses — other groups" value={-s.expenseToGroups} tone="neg" indent />
+                  <Row label="Expenses — other teams" value={-s.expenseToGroups} tone="neg" indent />
                 )}
                 <Row label="Expenses — MAIN STORE" value={-s.expenseToStore} tone={s.expenseToStore ? 'neg' : undefined} indent />
                 <Row label="Total expenses" value={-totalExpenses} tone={totalExpenses ? 'neg' : undefined} />

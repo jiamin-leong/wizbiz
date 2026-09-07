@@ -18,7 +18,7 @@ export default function WalletCards() {
       <WalletCard
         icon="🏢"
         label="TEAM BUSINESS"
-        sub="shared · your group"
+        sub="shared · your team"
         amount={business}
         tone="orange"
         selected={active === 'business'}

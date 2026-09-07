@@ -58,7 +58,7 @@ export default function NewCompetitionPage() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 rounded-xl border-2 border-orange/30 bg-orange/[0.04] p-3">
                   <label htmlFor="initialBalance" className="block text-sm font-semibold text-orange-dark">
-                    🏢 Group wallet <span className="font-normal text-gray-500">· shared</span>
+                    🏢 Team wallet <span className="font-normal text-gray-500">· shared</span>
                   </label>
                   <p className="text-xs text-gray-500 mt-0.5 mb-2">
                     One shared pot for business income and expenses.
@@ -72,7 +72,7 @@ export default function NewCompetitionPage() {
                     required
                     className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">Per group</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Per team</p>
                 </div>
                 <div className="flex-1 rounded-xl border-2 border-teal/30 bg-teal/[0.04] p-3">
                   <label htmlFor="personalStartingBalance" className="block text-sm font-semibold text-teal-dark">
@@ -96,7 +96,7 @@ export default function NewCompetitionPage() {
             </div>
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Number of Groups</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Number of Teams</label>
                 <input
                   name="numGroups"
                   type="number"
@@ -108,7 +108,7 @@ export default function NewCompetitionPage() {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Students per Group</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Students per Team</label>
                 <input
                   name="studentsPerGroup"
                   type="number"
@@ -121,7 +121,7 @@ export default function NewCompetitionPage() {
               </div>
             </div>
             <div className="bg-paper-2 border border-ink/15 rounded-lg px-4 py-3 text-sm text-orange-dark">
-              Each group is assigned a unique one-word password (e.g. <span className="font-pixel text-xs">BLAZE</span>), and each student a one-word login code (e.g. <span className="font-pixel text-xs">BEAR</span>). You can find them all on the competition page after creation.
+              Each team is assigned a unique one-word password (e.g. <span className="font-pixel text-xs">BLAZE</span>), and each student a one-word login code (e.g. <span className="font-pixel text-xs">BEAR</span>). You can find them all on the competition page after creation.
             </div>
             <button
               type="submit"

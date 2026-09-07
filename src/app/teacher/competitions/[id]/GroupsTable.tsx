@@ -22,6 +22,7 @@ const KIND = {
   team: {
     label: 'Competing',
     plural: 'Competing teams',
+    member: 'student',
     icon: '🏆',
     blurb: 'Sell, buy and are ranked. These are the businesses in the final.',
     rail: 'bg-orange',
@@ -34,6 +35,7 @@ const KIND = {
   spectators: {
     label: 'Spectators',
     plural: 'Spectator teams',
+    member: 'student',
     icon: '👥',
     blurb: 'Knocked out in round 1. Buy from the finalists — cannot sell, be paid, or rank.',
     rail: 'bg-teal',
@@ -46,6 +48,7 @@ const KIND = {
   judges: {
     label: 'Judges',
     plural: 'Judging panel',
+    member: 'participant',
     icon: '⚖️',
     blurb: 'Spend a large personal wallet with the finalists. Cannot sell, be paid, or rank.',
     rail: 'bg-ink',
@@ -57,10 +60,12 @@ const KIND = {
   },
 } as const satisfies Record<Kind, Record<string, string>>
 
+const plural = (word: string, n: number) => `${word}${n === 1 ? '' : 's'}`
+
 const KIND_ORDER: Kind[] = ['team', 'spectators', 'judges']
 
 function exportCSV(groups: Group[]) {
-  const rows = [['Role', 'Group', 'Password', 'WizCoins Balance', 'Login Code', 'Personal Balance']]
+  const rows = [['Role', 'Team', 'Password', 'Team Balance', 'Login Code', 'Personal Balance']]
   for (const g of groups) {
     for (const s of g.students) {
       rows.push([KIND[g.kind].label, g.name, g.groupPassword, String(g.balance), s.loginCode, String(s.personalBalance)])
@@ -176,7 +181,7 @@ export default function GroupsTable({
                   : 'text-gray-600 border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {editing ? 'Done editing' : '✏ Edit groups'}
+              {editing ? 'Done editing' : '✏ Edit teams'}
             </button>
           )}
         </div>
@@ -204,9 +209,9 @@ export default function GroupsTable({
                     </p>
                     <p className="mt-1">
                       <span className="font-display text-3xl font-bold text-gray-900 tabular-nums">{c.students}</span>
-                      <span className="text-sm text-gray-400"> students</span>
+                      <span className="text-sm text-gray-400"> {plural(KIND[k].member, c.students)}</span>
                       <span className="text-sm text-gray-300"> · </span>
-                      <span className="text-sm text-gray-500 tabular-nums">{c.groups} {c.groups === 1 ? 'group' : 'groups'}</span>
+                      <span className="text-sm text-gray-500 tabular-nums">{c.groups} {plural('team', c.groups)}</span>
                     </p>
                     <p className="text-[11px] text-gray-400 mt-1.5 leading-snug">{KIND[k].blurb}</p>
                   </div>
@@ -242,7 +247,7 @@ export default function GroupsTable({
 
       {editing && (
         <p className="text-xs text-orange bg-paper-2 border border-ink/15 rounded-lg px-3 py-2 mb-3">
-          Click a group name to rename it. Use × to remove a participant. Use + Add to add one to a group.
+          Click a team name to rename it. Use × to remove someone. Use + Add to add someone to a team.
         </p>
       )}
 
@@ -252,16 +257,16 @@ export default function GroupsTable({
           <thead>
             <tr className="bg-paper-2 border-b border-ink/10">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-10">#</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-48">Group</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-48">Team</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-44">Password</th>
               <th className="text-left px-4 py-3 w-44">
-                <span className="block text-xs font-semibold text-orange uppercase tracking-wide">Group WizCoins</span>
+                <span className="block text-xs font-semibold text-orange uppercase tracking-wide">Team WizCoins</span>
                 <span className="block text-[10px] font-normal normal-case tracking-normal text-gray-400 mt-0.5">Shared · business income &amp; expenses</span>
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-40">Login Code</th>
               <th className="text-left px-4 py-3 w-40">
                 <span className="block text-xs font-semibold text-teal uppercase tracking-wide">Personal WizCoins</span>
-                <span className="block text-[10px] font-normal normal-case tracking-normal text-gray-400 mt-0.5">Private · per participant</span>
+                <span className="block text-[10px] font-normal normal-case tracking-normal text-gray-400 mt-0.5">Private · per person</span>
               </th>
               {editing && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12"></th>}
             </tr>
@@ -306,7 +311,7 @@ export default function GroupsTable({
                             {k.label}
                           </span>
                         )}
-                        <span className="text-[11px] text-gray-400">{studs.length} {studs.length === 1 ? 'participant' : 'participants'}</span>
+                        <span className="text-[11px] text-gray-400">{studs.length} {plural(k.member, studs.length)}</span>
                         {!editing && (
                           <button
                             onClick={async () => { setPreviewing(g.id); await previewAsStudent(g.id) }}
@@ -346,7 +351,7 @@ export default function GroupsTable({
                       <>
                         <span className="font-bold text-orange tabular-nums">{g.balance.toLocaleString()}</span>
                         <span className="ml-1 text-xs">{groupDelta(g.balance)}</span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">shared by group</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">shared by team</p>
                       </>
                     ) : (
                       <>
@@ -364,7 +369,8 @@ export default function GroupsTable({
                     <span className="text-xs font-bold uppercase tracking-wide">
                       {k.icon} {k.plural}
                       <span className="font-normal normal-case tracking-normal opacity-70">
-                        {' '}· {countsFor(g.kind).groups} groups, {countsFor(g.kind).students} students — {k.blurb}
+                        {' '}· {countsFor(g.kind).groups} {plural('team', countsFor(g.kind).groups)},{' '}
+                        {countsFor(g.kind).students} {plural(k.member, countsFor(g.kind).students)} — {k.blurb}
                       </span>
                     </span>
                   </td>
@@ -378,7 +384,7 @@ export default function GroupsTable({
                   <tr>
                     {groupCells}
                     <td className={`px-4 py-3 border-t-2 border-ink/10 text-gray-300 text-xs ${zebra}`} colSpan={editing ? 3 : 2}>
-                      No participants
+                      No members
                     </td>
                   </tr>
                   </Fragment>
@@ -402,7 +408,7 @@ export default function GroupsTable({
                         <button
                           onClick={() => handleRemove(s.id)}
                           className="text-orange hover:text-red-500 transition leading-none font-bold text-lg"
-                          title="Remove participant"
+                          title="Remove from team"
                         >
                           ×
                         </button>
@@ -427,7 +433,8 @@ export default function GroupsTable({
               <p className="text-xs font-bold uppercase tracking-wide">
                 {KIND[g.kind].icon} {KIND[g.kind].plural}
                 <span className="font-normal normal-case tracking-normal opacity-70">
-                  {' '}· {countsFor(g.kind).groups} groups, {countsFor(g.kind).students} students
+                  {' '}· {countsFor(g.kind).groups} {plural('team', countsFor(g.kind).groups)},{' '}
+                  {countsFor(g.kind).students} {plural(KIND[g.kind].member, countsFor(g.kind).students)}
                 </span>
               </p>
               <p className="text-[11px] mt-0.5 opacity-80 normal-case font-normal">{KIND[g.kind].blurb}</p>
@@ -507,7 +514,7 @@ export default function GroupsTable({
                       <button
                         onClick={() => handleRemove(s.id)}
                         className="text-orange hover:text-red-500 transition leading-none font-bold text-lg"
-                        title="Remove participant"
+                        title="Remove from team"
                       >
                         ×
                       </button>
@@ -522,7 +529,7 @@ export default function GroupsTable({
                     disabled={!!adding[g.id]}
                     className="text-xs text-orange bg-paper-2 border border-ink/15 px-2.5 py-1 rounded-full transition font-medium disabled:opacity-50"
                   >
-                    {adding[g.id] ? '...' : '+ Add participant'}
+                    {adding[g.id] ? '...' : '+ Add member'}
                   </button>
                 </div>
               )}

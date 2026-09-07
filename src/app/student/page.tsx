@@ -87,7 +87,7 @@ export default async function StudentDashboard() {
               <div>
                 <p className="text-paper/60 text-[10px] font-pixel tracking-[0.2em] mb-1">YOU ARE</p>
                 <p className="text-white text-3xl font-extrabold tracking-wide">{student?.loginCode}</p>
-                <p className="text-paper/80 text-base font-semibold mt-1">{group.name} group</p>
+                <p className="text-paper/80 text-base font-semibold mt-1">{group.name} team</p>
               </div>
               <WalletCards />
             </div>

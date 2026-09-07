@@ -15,6 +15,7 @@ export default function CompetitionHeader({
   totalStudents,
   totalDays,
   canEdit = true,
+  isFinal = false,
 }: {
   competition: {
     id: number
@@ -28,6 +29,7 @@ export default function CompetitionHeader({
   totalStudents: number
   totalDays: number
   canEdit?: boolean
+  isFinal?: boolean
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -136,11 +138,11 @@ export default function CompetitionHeader({
           )}
         </div>
         <div className="bg-paper-2 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Groups</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{isFinal ? 'Finalist teams' : 'Teams'}</p>
           <p className="font-display text-3xl font-bold text-orange tabular-nums">{totalGroups}</p>
         </div>
         <div className="bg-paper-2 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Students</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{isFinal ? 'Finalist students' : 'Students'}</p>
           <p className="font-display text-3xl font-bold text-orange tabular-nums">{totalStudents}</p>
         </div>
         <div className="bg-paper-2 rounded-xl p-4">

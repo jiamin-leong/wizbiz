@@ -54,7 +54,7 @@ export default function StudentTabs({
         </div>
         <span className="text-xs text-ink-soft">
           {active === 'business'
-            ? '· shared — your whole group sees this'
+            ? '· shared — your whole team sees this'
             : '· personal — just you'}
         </span>
       </div>
