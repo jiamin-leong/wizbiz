@@ -43,7 +43,7 @@ export default function Home() {
                 Teacher Login
               </Link>
               <Link href="/login/student" className="btn-metal btn-chrome px-8 py-3.5 text-base">
-                Student Login
+                Player Login
               </Link>
             </div>
           </div>

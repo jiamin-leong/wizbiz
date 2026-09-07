@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!)
 
 export type SessionPayload =
-  | { role: 'teacher'; id: number; email: string }
+  | { role: 'teacher'; id: number; email: string; isAdmin?: boolean }
   | { role: 'student'; id: number; groupId: number; competitionId: number }
 
 export async function createSession(payload: SessionPayload) {

@@ -2,83 +2,72 @@
 
 import { useState } from 'react'
 import GroupsTable from './GroupsTable'
-import ListingApprovalQueue from './ListingApprovalQueue'
-import CoOrganizers from './CoOrganizers'
+import BusinessStatements from './BusinessStatements'
+import Standings from './Standings'
+import { type Statement } from '@/lib/standings'
 
-type Student = { id: number; loginCode: string; groupId: number }
-type Group = { id: number; name: string; balance: number; groupPassword: string; students: Student[] }
-type Listing = { id: number; name: string; description: string | null; price: number; quantity: number; groupId: number }
-type CoOrg = { id: number; name: string; email: string }
+type Student = { id: number; loginCode: string; groupId: number; personalBalance: number }
+type Group = {
+  id: number
+  name: string
+  balance: number
+  groupPassword: string
+  kind: 'team' | 'judges' | 'spectators'
+  students: Student[]
+}
+type Tab = 'groups' | 'business' | 'standings'
 
 export default function CompetitionTabs({
   groups,
   initialBalance,
-  listings,
-  groupNameMap,
+  statements,
   competitionId,
-  coOrganizers,
-  isOwner,
+  canManage,
+  canAdvance,
 }: {
   groups: Group[]
   initialBalance: number
-  listings: Listing[]
-  groupNameMap: Record<number, string>
+  statements: Statement[]
   competitionId: number
-  coOrganizers: CoOrg[]
-  isOwner: boolean
+  canManage: boolean
+  canAdvance: boolean
 }) {
-  const [tab, setTab] = useState<'groups' | 'marketplace' | 'settings'>('groups')
+  const [tab, setTab] = useState<Tab>('groups')
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'groups', label: 'Teams' },
+    { key: 'business', label: 'Financials' },
+    { key: 'standings', label: 'Standings' },
+  ]
 
   return (
     <div>
-      <div className="flex gap-1 border-b border-gray-200 mb-6">
-        <button
-          onClick={() => setTab('groups')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${tab === 'groups' ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          Groups
-        </button>
-        <button
-          onClick={() => setTab('marketplace')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition flex items-center gap-1.5 ${tab === 'marketplace' ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          Marketplace
-          {listings.length > 0 && (
-            <span className="bg-red-100 text-red-600 text-xs font-semibold px-1.5 py-0.5 rounded-full">
-              {listings.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setTab('settings')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${tab === 'settings' ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          Settings
-        </button>
+      <div className="flex gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
+              tab === t.key ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t.label}
+            {t.key === 'standings' && canAdvance && statements.some(s => s.qualified) && (
+              <span className="ml-1.5 text-teal-dark">✓</span>
+            )}
+          </button>
+        ))}
       </div>
 
+      {/* The three roles are distinguished inside GroupsTable itself. */}
       {tab === 'groups' && (
-        <GroupsTable groups={groups} initialBalance={initialBalance} />
+        <GroupsTable groups={groups} initialBalance={initialBalance} canManage={canManage} />
       )}
-      {tab === 'marketplace' && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">
-            Marketplace Listings
-            {listings.length > 0 && (
-              <span className="ml-2 bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
-                {listings.length} pending
-              </span>
-            )}
-          </h2>
-          <ListingApprovalQueue listings={listings} groupNameMap={groupNameMap} />
-        </div>
+      {tab === 'business' && (
+        <BusinessStatements statements={statements} />
       )}
-      {tab === 'settings' && (
-        <CoOrganizers
-          competitionId={competitionId}
-          coOrganizers={coOrganizers}
-          isOwner={isOwner}
-        />
+      {tab === 'standings' && (
+        <Standings statements={statements} competitionId={competitionId} canAdvance={canAdvance} />
       )}
     </div>
   )

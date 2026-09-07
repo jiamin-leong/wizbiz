@@ -1,61 +1,67 @@
 'use server'
 
 import { db } from '@/db'
-import { competitions, groups, students, teachers, competitionOrganizers } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { competitions, groups, students, teachers } from '@/db/schema'
+import { eq, and, inArray } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { getSession, createSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
+import { generateGroupPasswords, allocateLoginCodes } from '@/lib/credentials'
+import {
+  requireTeacher,
+  requireAdminTeacher,
+  getCompetitionAccess,
+  competitionIdForGroup,
+  competitionIdForStudent,
+  competitionIdForListing,
+} from '@/lib/authz'
 
-const PASSWORD_WORDS = [
-  'BLAZE', 'STORM', 'FROST', 'EMBER', 'SPARK', 'FLARE', 'DRIFT', 'CREST',
-  'SURGE', 'NOVA', 'COMET', 'ORBIT', 'PULSE', 'PRISM', 'RIDGE', 'FORGE',
-  'VALE', 'PEAK', 'TIDE', 'REEF', 'GUST', 'MIST', 'BOLT', 'FLASH',
-  'IRON', 'GOLD', 'JADE', 'RUBY', 'ONYX', 'OPAL', 'FLINT', 'SLATE',
-]
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function generateGroupPassword(): string {
-  const word = PASSWORD_WORDS[Math.floor(Math.random() * PASSWORD_WORDS.length)]
-  const digits = String(Math.floor(Math.random() * 900) + 100)
-  return `${word}-${digits}`
-}
+const DENIED = { error: 'You do not have access to that competition.' }
 
 export async function createCompetition(formData: FormData) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireAdminTeacher()
 
   const name = formData.get('name') as string
   const startDate = new Date(formData.get('startDate') as string)
   const endDate = new Date(formData.get('endDate') as string)
   const initialBalance = parseInt(formData.get('initialBalance') as string)
+  const personalStartingBalance = parseInt(formData.get('personalStartingBalance') as string) || 0
   const numGroups = parseInt(formData.get('numGroups') as string)
   const studentsPerGroup = Math.min(parseInt(formData.get('studentsPerGroup') as string), 20)
 
   const [competition] = await db
     .insert(competitions)
-    .values({ teacherId: session.id, name, startDate, endDate, initialBalance, status: 'active' })
+    .values({ teacherId: session.id, name, startDate, endDate, initialBalance, personalStartingBalance, status: 'active' })
     .returning()
+
+  const passwords = generateGroupPasswords(numGroups)
+  const usedCodes = new Set<string>()
+  const spareCodes = [...new Set(THEME_NAMES.flatMap(t => GROUP_THEMES[t]))]
 
   for (let g = 0; g < numGroups; g++) {
     const theme = THEME_NAMES[g % THEME_NAMES.length]
-    const items = shuffle(GROUP_THEMES[theme]).slice(0, studentsPerGroup)
-    const groupPassword = generateGroupPassword()
+    const items = allocateLoginCodes(GROUP_THEMES[theme], studentsPerGroup, usedCodes, spareCodes)
+    const groupPassword = passwords[g]
     const groupPasswordHash = await bcrypt.hash(groupPassword, 10)
 
     const [group] = await db
       .insert(groups)
-      .values({ competitionId: competition.id, name: theme, balance: initialBalance, groupPassword, groupPasswordHash })
+      .values({
+        competitionId: competition.id,
+        name: theme,
+        balance: initialBalance,
+        startingCapital: initialBalance,
+        groupPassword,
+        groupPasswordHash,
+      })
       .returning()
 
     const studentCodes = items.map(item => ({
       groupId: group.id,
-      loginCode: `${theme.toUpperCase()}-${item}`,
+      loginCode: item,
       passwordHash: groupPasswordHash,
+      personalBalance: personalStartingBalance,
     }))
 
     await db.insert(students).values(studentCodes)
@@ -64,58 +70,28 @@ export async function createCompetition(formData: FormData) {
   redirect(`/teacher/competitions/${competition.id}`)
 }
 
-export async function addCoOrganizer(competitionId: number, email: string) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
 
-  const [competition] = await db.select({ teacherId: competitions.teacherId })
-    .from(competitions)
-    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
-  if (!competition) return { error: 'Only the competition owner can add co-organisers' }
-
-  const [teacher] = await db.select({ id: teachers.id, name: teachers.name })
-    .from(teachers)
-    .where(eq(teachers.email, email.toLowerCase().trim()))
-  if (!teacher) return { error: 'No teacher account found with that email' }
-  if (teacher.id === session.id) return { error: 'You are already the owner' }
-
-  const [existing] = await db.select({ id: competitionOrganizers.id })
-    .from(competitionOrganizers)
-    .where(and(eq(competitionOrganizers.competitionId, competitionId), eq(competitionOrganizers.teacherId, teacher.id)))
-  if (existing) return { error: `${teacher.name} is already a co-organiser` }
-
-  await db.insert(competitionOrganizers).values({ competitionId, teacherId: teacher.id })
-  return { success: true }
-}
-
-export async function removeCoOrganizer(competitionId: number, coTeacherId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
-
-  const [competition] = await db.select({ teacherId: competitions.teacherId })
-    .from(competitions)
-    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
-  if (!competition) return { error: 'Only the competition owner can remove co-organisers' }
-
-  await db.delete(competitionOrganizers)
-    .where(and(eq(competitionOrganizers.competitionId, competitionId), eq(competitionOrganizers.teacherId, coTeacherId)))
-}
 
 export async function updateCompetition(competitionId: number, name: string, startDate: string, endDate: string) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot edit competition settings.' }
+
   await db
     .update(competitions)
     .set({ name, startDate: new Date(startDate), endDate: new Date(endDate) })
-    .where(and(eq(competitions.id, competitionId), eq(competitions.teacherId, session.id)))
+    .where(eq(competitions.id, competitionId))
 }
 
 export async function previewAsStudent(groupId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
 
   const [group] = await db.select().from(groups).where(eq(groups.id, groupId))
   if (!group) return { error: 'Group not found' }
+
+  const access = await getCompetitionAccess(group.competitionId, session.id)
+  if (!access) return DENIED
 
   const [firstStudent] = await db.select({ id: students.id }).from(students).where(eq(students.groupId, groupId))
   if (!firstStudent) return { error: 'No students in this group yet' }
@@ -129,14 +105,26 @@ export async function previewAsStudent(groupId: number) {
 }
 
 export async function renameGroup(groupId: number, name: string) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+
+  const competitionId = await competitionIdForGroup(groupId)
+  if (!competitionId) return { error: 'Group not found' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot rename teams.' }
+
   await db.update(groups).set({ name }).where(eq(groups.id, groupId))
 }
 
 export async function removeStudent(studentId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+
+  const competitionId = await competitionIdForStudent(studentId)
+  if (!competitionId) return { error: 'Student not found' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot change the roster.' }
+
   try {
     await db.delete(students).where(eq(students.id, studentId))
   } catch {
@@ -145,39 +133,51 @@ export async function removeStudent(studentId: number) {
 }
 
 export async function addStudent(groupId: number) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
 
   const [group] = await db.select().from(groups).where(eq(groups.id, groupId))
   if (!group) return { error: 'Group not found' }
 
+  const access = await getCompetitionAccess(group.competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canManage) return { error: 'Co-organisers cannot change the roster.' }
+
+  const [competition] = await db
+    .select({ personalStartingBalance: competitions.personalStartingBalance })
+    .from(competitions)
+    .where(eq(competitions.id, group.competitionId))
+
+  // Login codes are bare names, so a new one must not clash with any student
+  // in the whole competition, not just this group.
+  const siblingGroups = await db
+    .select({ id: groups.id })
+    .from(groups)
+    .where(eq(groups.competitionId, group.competitionId))
+
   const existingStudents = await db
     .select({ loginCode: students.loginCode })
     .from(students)
-    .where(eq(students.groupId, groupId))
+    .where(inArray(students.groupId, siblingGroups.map(g => g.id)))
 
-  const existingCodes = new Set(existingStudents.map(s => s.loginCode))
+  const usedCodes = new Set(existingStudents.map(s => s.loginCode))
 
-  // Infer theme from existing codes or fall back to group name
-  let themeName: string
-  if (existingStudents.length > 0) {
-    const themeUpper = existingStudents[0].loginCode.split('-')[0]
-    themeName = themeUpper[0] + themeUpper.slice(1).toLowerCase()
-  } else {
-    themeName = group.name
+  // The group is named after its theme; fall back to the full pool if it is
+  // exhausted or the group was renamed.
+  const themeItems = GROUP_THEMES[group.name] ?? []
+  const spareCodes = [...new Set(THEME_NAMES.flatMap(t => GROUP_THEMES[t]))]
+
+  let loginCode: string
+  try {
+    ;[loginCode] = allocateLoginCodes(themeItems, 1, usedCodes, spareCodes)
+  } catch {
+    return { error: 'No unused login codes remain in this competition.' }
   }
-
-  const items = GROUP_THEMES[themeName]
-  if (!items) return { error: 'Cannot determine theme for this group' }
-
-  const themeUpper = themeName.toUpperCase()
-  const unusedItem = items.find(item => !existingCodes.has(`${themeUpper}-${item}`))
-  if (!unusedItem) return { error: 'All slots are full for this group (maximum 20 participants)' }
 
   await db.insert(students).values({
     groupId,
-    loginCode: `${themeUpper}-${unusedItem}`,
+    loginCode,
     passwordHash: group.groupPasswordHash,
+    personalBalance: competition?.personalStartingBalance ?? 0,
   })
 }
 
@@ -188,8 +188,13 @@ export async function updateListingStatus(
   editedDescription?: string,
   editedPrice?: number
 ) {
-  const session = await getSession()
-  if (!session || session.role !== 'teacher') redirect('/')
+  const session = await requireTeacher()
+
+  const competitionId = await competitionIdForListing(listingId)
+  if (!competitionId) return { error: 'Listing not found' }
+  const access = await getCompetitionAccess(competitionId, session.id)
+  if (!access) return DENIED
+  if (!access.canModerate) return DENIED
 
   const { listings } = await import('@/db/schema')
   await db

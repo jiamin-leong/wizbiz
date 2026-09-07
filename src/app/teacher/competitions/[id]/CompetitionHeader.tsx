@@ -14,6 +14,8 @@ export default function CompetitionHeader({
   totalGroups,
   totalStudents,
   totalDays,
+  canEdit = true,
+  isFinal = false,
 }: {
   competition: {
     id: number
@@ -26,6 +28,8 @@ export default function CompetitionHeader({
   totalGroups: number
   totalStudents: number
   totalDays: number
+  canEdit?: boolean
+  isFinal?: boolean
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -50,7 +54,7 @@ export default function CompetitionHeader({
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
       <div className="flex justify-between items-start mb-5">
-        {editing ? (
+        {editing && canEdit ? (
           <input
             autoFocus
             value={name}
@@ -91,14 +95,14 @@ export default function CompetitionHeader({
                 Cancel
               </button>
             </>
-          ) : (
+          ) : canEdit ? (
             <button
               onClick={() => setEditing(true)}
               className="text-sm text-gray-500 hover:text-orange border border-gray-200 hover:border-ink/15 px-3 py-1.5 rounded-lg transition"
             >
               ✏ Edit
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -134,11 +138,11 @@ export default function CompetitionHeader({
           )}
         </div>
         <div className="bg-paper-2 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Groups</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{isFinal ? 'Finalist teams' : 'Teams'}</p>
           <p className="font-display text-3xl font-bold text-orange tabular-nums">{totalGroups}</p>
         </div>
         <div className="bg-paper-2 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Students</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{isFinal ? 'Finalist students' : 'Students'}</p>
           <p className="font-display text-3xl font-bold text-orange tabular-nums">{totalStudents}</p>
         </div>
         <div className="bg-paper-2 rounded-xl p-4">
