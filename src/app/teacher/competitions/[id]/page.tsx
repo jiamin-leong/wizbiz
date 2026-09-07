@@ -111,8 +111,6 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           competitionId={competition.id}
           canManage={access.canManage}
           canAdvance={access.canAdvance && competition.round === 1 && competition.classId !== null}
-          judgeCount={judges.length}
-          spectatorCount={spectators.length}
         />
         <AutoRefresh />
     </div>

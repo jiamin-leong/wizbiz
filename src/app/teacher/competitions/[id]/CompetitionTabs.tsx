@@ -24,8 +24,6 @@ export default function CompetitionTabs({
   competitionId,
   canManage,
   canAdvance,
-  judgeCount,
-  spectatorCount,
 }: {
   groups: Group[]
   initialBalance: number
@@ -33,8 +31,6 @@ export default function CompetitionTabs({
   competitionId: number
   canManage: boolean
   canAdvance: boolean
-  judgeCount: number
-  spectatorCount: number
 }) {
   const [tab, setTab] = useState<Tab>('groups')
 
@@ -58,11 +54,6 @@ export default function CompetitionTabs({
             {t.label}
             {t.key === 'standings' && canAdvance && statements.some(s => s.qualified) && (
               <span className="ml-1.5 text-teal-dark">✓</span>
-            )}
-            {t.key === 'groups' && (judgeCount > 0 || spectatorCount > 0) && (
-              <span className="ml-1.5 text-xs font-normal text-gray-400">
-                {statements.length}+{spectatorCount + judgeCount}
-              </span>
             )}
           </button>
         ))}
