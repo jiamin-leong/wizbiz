@@ -13,7 +13,7 @@ import { requireTeacher, requireAdminTeacher, getProgrammeAccess, getCompetition
 import { GROUP_THEMES, THEME_NAMES } from '@/lib/themes'
 import {
   generateGroupPassword, generateGroupPasswords, allocateLoginCodes,
-  JUDGE_PANEL_NAME, JUDGE_CODES, DEFAULT_JUDGE_COUNT, DEFAULT_JUDGE_BALANCE,
+  JUDGE_PANEL_NAME, allocateJudgeCodes, MAX_JUDGES, DEFAULT_JUDGE_COUNT, DEFAULT_JUDGE_BALANCE,
 } from '@/lib/credentials'
 import { allocateGroups, allocationError, MAX_GROUPS_PER_CLASS } from '@/lib/allocation'
 import { computeStatements, rankStatements, ADVANCING_PER_CLASS } from '@/lib/standings'
@@ -509,8 +509,8 @@ export async function createMasterHackathon(programmeId: number, formData: FormD
   if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return { error: 'Pick a start and end date.' }
   if (endDate < startDate) return { error: 'The end date cannot be before the start date.' }
   if (topUp < 0 || personalTopUp < 0) return { error: 'Top-ups cannot be negative.' }
-  if (judgeCount < 0 || judgeCount > JUDGE_CODES.length) {
-    return { error: `Between 0 and ${JUDGE_CODES.length} judges.` }
+  if (judgeCount < 0 || judgeCount > MAX_JUDGES) {
+    return { error: `Between 0 and ${MAX_JUDGES} judges.` }
   }
   if (judgeBalance < 0) return { error: 'Judge balance cannot be negative.' }
 
@@ -693,8 +693,13 @@ export async function createMasterHackathon(programmeId: number, formData: FormD
       })
       .returning()
 
+    // Never reuse a login name already live anywhere, so judges in one
+    // programme cannot collide with judges or students in another.
+    const takenRows = await db.select({ loginCode: students.loginCode }).from(students)
+    const judgeCodes = allocateJudgeCodes(judgeCount, new Set(takenRows.map(r => r.loginCode)))
+
     await db.insert(students).values(
-      JUDGE_CODES.slice(0, judgeCount).map(loginCode => ({
+      judgeCodes.map(loginCode => ({
         groupId: judgeGroup.id,
         loginCode,
         passwordHash: judgePasswordHash,

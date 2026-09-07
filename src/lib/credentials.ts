@@ -47,12 +47,33 @@ export function generateGroupPassword(taken: Iterable<string> = []): string {
 // Judges are modelled as a group so they inherit wallets, logins and purchasing
 // with no new plumbing — but the panel never trades and never ranks.
 export const JUDGE_PANEL_NAME = 'JUDGES'
-export const JUDGE_CODES = [
-  'ALPHA', 'BRAVO', 'CHARLIE', 'DELTA',
-  'ECHO', 'FOXTROT', 'GOLF', 'HOTEL',
+
+// Deliberately not a fixed list: every final used to mint the same ALPHA-DELTA,
+// so two programmes' judges collided on code. These are drawn per final from
+// names nothing else is using.
+export const JUDGE_NAME_POOL = [
+  'ARBITER', 'BEACON', 'CHALICE', 'DIADEM', 'EMBLEM', 'FULCRUM', 'GAVEL', 'HALLMARK',
+  'INSIGNIA', 'JUDGMENT', 'KEYSTONE', 'LAUREL', 'MEDALLION', 'NOTARY', 'ORACLE', 'PLINTH',
+  'QUORUM', 'REGALIA', 'SCEPTRE', 'TRIBUNAL', 'UMPIRE', 'VERDICT', 'WARRANT', 'ZENITH',
 ]
+export const MAX_JUDGES = 8
 export const DEFAULT_JUDGE_COUNT = 4
 export const DEFAULT_JUDGE_BALANCE = 1000
+
+/** `count` judge login names, avoiding anything already taken. */
+export function allocateJudgeCodes(count: number, taken: Set<string>): string[] {
+  const picked: string[] = []
+  for (const name of shuffle(JUDGE_NAME_POOL)) {
+    if (picked.length === count) break
+    if (taken.has(name)) continue
+    picked.push(name)
+    taken.add(name)
+  }
+  if (picked.length < count) {
+    throw new Error(`Ran out of judge login names (needed ${count}, got ${picked.length}).`)
+  }
+  return picked
+}
 
 /**
  * Picks `size` login names for one team from its theme, skipping any already
