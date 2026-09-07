@@ -5,6 +5,14 @@ import Link from 'next/link'
 import { logout } from '@/lib/actions'
 
 type Comp = { id: number; name: string }
+type NestedComp = { id: number; name: string; status: string }
+type Programme = {
+  id: number
+  name: string
+  mine: boolean
+  unclaimed: number
+  competitions: NestedComp[]
+}
 
 export default function TeacherShell({
   teacher,
@@ -17,7 +25,7 @@ export default function TeacherShell({
 }: {
   teacher: { name: string; email: string } | undefined
   isAdmin: boolean
-  programmes: { id: number; name: string; mine: boolean; unclaimed: number }[]
+  programmes: Programme[]
   upcoming: Comp[]
   active: Comp[]
   past: Comp[]
@@ -25,6 +33,16 @@ export default function TeacherShell({
 }) {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
+
+  // Class hackathons share names across programmes, so a flat list reads as
+  // duplicates. Nest them, and open the programmes this teacher is part of.
+  const [expanded, setExpanded] = useState<Record<number, boolean>>(() =>
+    Object.fromEntries(programmes.map(p => [p.id, p.mine || programmes.length === 1]))
+  )
+  const toggle = (id: number) => setExpanded(e => ({ ...e, [id]: !e[id] }))
+
+  const statusDot = (status: string) =>
+    status === 'active' ? 'bg-green-400' : status === 'upcoming' ? 'bg-teal' : 'bg-gray-300'
 
   return (
     <div className="min-h-screen bg-paper-2 md:flex">
@@ -77,22 +95,56 @@ export default function TeacherShell({
               <p className="px-3 text-sm text-gray-400">None yet</p>
             ) : (
               <div className="flex flex-col gap-0.5">
-                {programmes.map(p => (
-                  <Link
-                    key={p.id}
-                    href={`/teacher/programmes/${p.id}`}
-                    onClick={close}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-paper-2 hover:text-orange-dark transition"
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.mine ? 'bg-teal' : 'bg-gray-300'}`} />
-                    <span className="truncate">{p.name}</span>
-                    {!p.mine && p.unclaimed > 0 && (
-                      <span className="ml-auto shrink-0 text-[10px] font-semibold text-orange-dark bg-orange/15 px-1.5 py-0.5 rounded-full">
-                        {p.unclaimed}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                {programmes.map(p => {
+                  const isOpen = !!expanded[p.id]
+                  return (
+                    <div key={p.id}>
+                      <div className="flex items-center rounded-lg hover:bg-paper-2 transition group">
+                        {p.competitions.length > 0 ? (
+                          <button
+                            onClick={() => toggle(p.id)}
+                            aria-label={isOpen ? `Collapse ${p.name}` : `Expand ${p.name}`}
+                            aria-expanded={isOpen}
+                            className="shrink-0 w-6 h-8 grid place-items-center text-gray-400 hover:text-orange transition"
+                          >
+                            <span className={`text-[10px] transition-transform ${isOpen ? 'rotate-90' : ''}`}>▶</span>
+                          </button>
+                        ) : (
+                          <span className="shrink-0 w-6" />
+                        )}
+                        <Link
+                          href={`/teacher/programmes/${p.id}`}
+                          onClick={close}
+                          className="flex-1 min-w-0 flex items-center gap-2 pr-3 py-2 text-sm text-gray-700 group-hover:text-orange-dark transition"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.mine ? 'bg-teal' : 'bg-gray-300'}`} />
+                          <span className="truncate font-medium">{p.name}</span>
+                          {!p.mine && p.unclaimed > 0 && (
+                            <span className="ml-auto shrink-0 text-[10px] font-semibold text-orange-dark bg-orange/15 px-1.5 py-0.5 rounded-full">
+                              {p.unclaimed}
+                            </span>
+                          )}
+                        </Link>
+                      </div>
+
+                      {isOpen && p.competitions.length > 0 && (
+                        <div className="ml-6 pl-3 border-l border-ink/10 flex flex-col gap-0.5 mb-1">
+                          {p.competitions.map(c => (
+                            <Link
+                              key={c.id}
+                              href={`/teacher/competitions/${c.id}`}
+                              onClick={close}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[13px] text-gray-600 hover:bg-paper-2 hover:text-orange-dark transition truncate"
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot(c.status)}`} />
+                              <span className="truncate">{c.name}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -100,7 +152,7 @@ export default function TeacherShell({
           {/* Upcoming competitions */}
           {upcoming.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Upcoming</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Standalone · upcoming</p>
               <div className="flex flex-col gap-0.5">
                 {upcoming.map(c => (
                   <Link
@@ -117,12 +169,12 @@ export default function TeacherShell({
             </div>
           )}
 
-          {/* Active competitions */}
+          {/* Active competitions — hidden entirely when nothing is standalone,
+              since programme competitions are nested above. */}
+          {active.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Active</p>
-            {active.length === 0 ? (
-              <p className="text-xs text-gray-400 px-3 py-1">No active competitions</p>
-            ) : (
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Standalone · active</p>
+            {(
               <div className="flex flex-col gap-0.5">
                 {active.map(c => (
                   <Link
@@ -138,11 +190,12 @@ export default function TeacherShell({
               </div>
             )}
           </div>
+          )}
 
           {/* Past competitions */}
           {past.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Past</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 mb-1">Standalone · past</p>
               <div className="flex flex-col gap-0.5">
                 {past.map(c => (
                   <Link
