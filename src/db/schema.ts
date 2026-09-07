@@ -9,8 +9,40 @@ export const groupKindEnum = pgEnum('group_kind', ['team', 'judges', 'spectators
 export const teachers = pgTable('teachers', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  // Null for teachers who joined by invite and sign in by email link only.
+  passwordHash: text('password_hash'),
   name: text('name').notNull(),
+  // Admins reach the admin panel from inside the teacher portal, rather than
+  // through a separate login.
+  isAdmin: boolean('is_admin').notNull().default(false),
+  // Null until an admin approves the sign-up request. A pending account exists
+  // but cannot sign in.
+  approvedAt: timestamp('approved_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Single-use invitations. Teacher accounts can read student names, balances and
+// credentials, so accounts are created by invitation rather than open sign-up.
+// A code may be bound to a class, in which case redeeming it also makes that
+// person the class teacher.
+export const invites = pgTable('invites', {
+  id: serial('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  label: text('label').notNull().default(''),
+  classId: integer('class_id'),
+  usedAt: timestamp('used_at'),
+  usedByTeacherId: integer('used_by_teacher_id').references(() => teachers.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// Single-use sign-in links. Only a hash of the token is stored, so a leaked
+// database row cannot be used to log in.
+export const loginTokens = pgTable('login_tokens', {
+  id: serial('id').primaryKey(),
+  teacherId: integer('teacher_id').references(() => teachers.id).notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

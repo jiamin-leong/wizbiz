@@ -15,11 +15,15 @@ export async function teacherLogin(formData: FormData) {
 
   const [teacher] = await db.select().from(teachers).where(eq(teachers.email, email))
   if (!teacher) return { error: 'Invalid credentials' }
+  // A teacher who joined by invite and never set a password signs in by link.
+  if (!teacher.passwordHash) {
+    return { error: 'This account has no password. Use the email sign-in link instead.' }
+  }
 
   const valid = await bcrypt.compare(password, teacher.passwordHash)
   if (!valid) return { error: 'Invalid credentials' }
 
-  await createSession({ role: 'teacher', id: teacher.id, email: teacher.email })
+  await createSession({ role: 'teacher', id: teacher.id, email: teacher.email, isAdmin: teacher.isAdmin })
   redirect('/teacher')
 }
 
@@ -99,7 +103,7 @@ export async function exitStudentPreview() {
   }
 
   const teacherId = parseInt(teacherIdStr)
-  const [teacher] = await db.select({ id: teachers.id, email: teachers.email }).from(teachers).where(eq(teachers.id, teacherId))
+  const [teacher] = await db.select({ id: teachers.id, email: teachers.email, isAdmin: teachers.isAdmin }).from(teachers).where(eq(teachers.id, teacherId))
 
   if (!teacher) {
     await deleteSession()
@@ -107,6 +111,6 @@ export async function exitStudentPreview() {
     return
   }
 
-  await createSession({ role: 'teacher', id: teacher.id, email: teacher.email })
+  await createSession({ role: 'teacher', id: teacher.id, email: teacher.email, isAdmin: teacher.isAdmin })
   redirect('/teacher')
 }
