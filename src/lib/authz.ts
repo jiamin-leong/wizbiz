@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { competitions, classes, programmes, teachers, groups, students, listings } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
@@ -29,6 +29,7 @@ export async function isAdmin(): Promise<boolean> {
 
 export type CompetitionRole =
   | 'owner'
+  | 'admin'
   | 'programme-owner'
   | 'class-teacher'
   | 'programme-moderator'
@@ -51,10 +52,16 @@ export type CompetitionAccess = {
 
 const ROLE_LABELS: Record<CompetitionRole, string> = {
   'owner': 'Owner',
+  'admin': 'Admin',
   'programme-owner': 'Programme owner',
   'class-teacher': 'Class teacher',
   'programme-moderator': 'Moderating',
   'programme-viewer': 'Viewing',
+}
+
+async function teacherIsAdmin(teacherId: number): Promise<boolean> {
+  const [row] = await db.select({ isAdmin: teachers.isAdmin }).from(teachers).where(eq(teachers.id, teacherId))
+  return row?.isAdmin === true
 }
 
 export function roleLabel(role: CompetitionRole): string {
@@ -97,10 +104,12 @@ export async function getCompetitionAccess(
     canManage: true,
     canModerate: true,
     canAdvance: true,
-    canManageOrganisers: role === 'owner' || role === 'programme-owner',
+    canManageOrganisers: role === 'owner' || role === 'programme-owner' || role === 'admin',
   })
 
   if (competition.teacherId === teacherId) return full('owner')
+
+  if (competition.programmeId === null && await teacherIsAdmin(teacherId)) return full('admin')
 
   if (competition.programmeId) {
     const [programme] = await db
@@ -161,9 +170,9 @@ export async function getCompetitionAccess(
   return null
 }
 
-/** Competition ids this teacher can see: owned, programme-owned, class-taught, co-organised. */
+/** Competition ids this teacher can see: owned, programme-owned, class-taught, co-organised; admins also see every standalone one. */
 export async function visibleCompetitionIds(teacherId: number): Promise<number[]> {
-  const [owned, viaProgramme, viaClass] = await Promise.all([
+  const [owned, viaProgramme, viaClass, standaloneForAdmin] = await Promise.all([
     db.select({ id: competitions.id }).from(competitions).where(eq(competitions.teacherId, teacherId)),
     db.select({ id: competitions.id })
       .from(competitions)
@@ -173,12 +182,16 @@ export async function visibleCompetitionIds(teacherId: number): Promise<number[]
       .from(competitions)
       .innerJoin(classes, eq(classes.id, competitions.classId))
       .where(eq(classes.teacherId, teacherId)),
+    teacherIsAdmin(teacherId).then(admin => admin
+      ? db.select({ id: competitions.id }).from(competitions).where(isNull(competitions.programmeId))
+      : []),
   ])
 
   const ids = new Set<number>()
   for (const r of owned) ids.add(r.id)
   for (const r of viaProgramme) ids.add(r.id)
   for (const r of viaClass) ids.add(r.id)
+  for (const r of standaloneForAdmin) ids.add(r.id)
   return [...ids]
 }
 

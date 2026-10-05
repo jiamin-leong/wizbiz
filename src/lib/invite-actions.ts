@@ -122,7 +122,8 @@ export async function redeemInvite(formData: FormData) {
   const [teacher] = await db
     .insert(teachers)
     // approvedAt stays null: the account exists but sees nothing yet.
-    .values({ name, email, passwordHash })
+    // Everyone invited is an admin, so all invited teachers share the same access.
+    .values({ name, email, passwordHash, isAdmin: true })
     .returning({ id: teachers.id, email: teachers.email, isAdmin: teachers.isAdmin })
 
   await db.update(invites).set({ usedByTeacherId: teacher.id }).where(eq(invites.id, invite.id))
