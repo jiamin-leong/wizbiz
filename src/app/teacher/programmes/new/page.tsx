@@ -48,7 +48,7 @@ export default function NewProgrammePage() {
       <div className="bg-white rounded-2xl shadow-md p-8">
         <h1 className="text-2xl font-bold text-orange mb-1">New Programme</h1>
         <p className="text-sm text-gray-500 mb-6">
-          A programme runs several classes through round 1 in parallel, then the top 3 teams from
+          A programme runs several classes through round 1 in parallel, then the top 2 teams from
           each class meet in one final. Creating it launches round 1 straight away, with all the
           teams and student logins.
         </p>

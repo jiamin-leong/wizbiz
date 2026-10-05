@@ -20,7 +20,7 @@ import { computeStatements, rankStatements, ADVANCING_PER_CLASS } from '@/lib/st
 
 // Each class reserves a block of MAX_GROUPS_PER_CLASS themes so no two classes
 // in a programme can mint the same team name — which is what keeps login codes
-// unique when 21 teams from 7 classes meet in the round 2 final.
+// unique when 14 teams from 7 classes meet in the round 2 final.
 const MAX_CLASSES = Math.floor(THEME_NAMES.length / MAX_GROUPS_PER_CLASS)
 
 // A 'use server' module may only export async functions, so these stay local.
@@ -228,7 +228,7 @@ async function runLaunch(
   // trips to a database several thousand miles away, which took minutes; this
   // is a handful of multi-row statements per class instead.
   // Login codes and passwords must both be unique across the whole programme:
-  // the code is the entire login, and the same 21 teams meet again in round 2.
+  // the code is the entire login, and the same 14 teams meet again in round 2.
   const teamCount = classRows.reduce((n, k) => n + allocateGroups(k.headcount).length, 0)
   const passwords = generateGroupPasswords(teamCount)
   const usedCodes = new Set<string>()

@@ -108,4 +108,4 @@ export function hasTieAtCut(ranked: Statement[], cut: number): boolean {
   return last.profitLoss === next.profitLoss && last.revenue === next.revenue
 }
 
-export const ADVANCING_PER_CLASS = 3
+export const ADVANCING_PER_CLASS = 2
