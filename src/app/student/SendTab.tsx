@@ -4,6 +4,15 @@ import { useState } from 'react'
 import { sendWizCoins } from '@/lib/student-actions'
 import { useBalance } from './BalanceContext'
 
+// A round 1/2/5 × 10^n figure at or below half the balance, so the hint is
+// always affordable and in the same ballpark as what the student holds.
+function examplePlaceholder(balance: number): number {
+  const half = Math.floor(balance / 2)
+  if (half < 1) return 1
+  const magnitude = 10 ** Math.floor(Math.log10(half))
+  return [5, 2, 1].map(m => m * magnitude).find(n => n <= half) ?? 1
+}
+
 type Group = { id: number; name: string; balance: number }
 type Recipient = number | 'store'
 
@@ -153,7 +162,7 @@ export default function SendTab({
             max={balance}
             value={amount}
             onChange={e => { setAmount(e.target.value); setError(''); setSuccess('') }}
-            placeholder="e.g. 500"
+            placeholder={`e.g. ${examplePlaceholder(balance)}`}
             className={`w-full bg-white border-2 border-gray-200 ${accentFocus} rounded-xl px-4 py-3 text-2xl font-bold ${accentText} focus:outline-none`}
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">WC</span>

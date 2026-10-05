@@ -51,7 +51,7 @@ export default async function StudentDashboard() {
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return (
-    <BalanceProvider initialPersonal={student?.personalBalance ?? 0} initialBusiness={group.balance}>
+    <BalanceProvider initialPersonal={student?.personalBalance ?? 0} initialBusiness={group.balance} startingCapital={group.startingCapital ?? competition.initialBalance}>
       {isPreview && (
         <div className="fixed top-0 inset-x-0 z-50 bg-orange text-white flex items-center justify-between px-6 py-2.5 shadow-md">
           <div className="flex items-center gap-2 text-sm font-medium">

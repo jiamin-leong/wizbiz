@@ -7,6 +7,7 @@ export type Wallet = 'personal' | 'business'
 type Ctx = {
   personal: number
   business: number
+  startingCapital: number
   active: Wallet
   setActive: (w: Wallet) => void
   balance: number // active wallet balance — keeps existing spend/rollback callers working
@@ -19,6 +20,7 @@ type Ctx = {
 const BalanceContext = createContext<Ctx>({
   personal: 0,
   business: 0,
+  startingCapital: 0,
   active: 'personal',
   setActive: () => {},
   balance: 0,
@@ -30,10 +32,12 @@ export function BalanceProvider({
   children,
   initialPersonal,
   initialBusiness,
+  startingCapital,
 }: {
   children: ReactNode
   initialPersonal: number
   initialBusiness: number
+  startingCapital: number
 }) {
   const [personal, setPersonal] = useState(initialPersonal)
   const [business, setBusiness] = useState(initialBusiness)
@@ -49,6 +53,7 @@ export function BalanceProvider({
       value={{
         personal,
         business,
+        startingCapital,
         active,
         setActive,
         balance: active === 'personal' ? personal : business,
