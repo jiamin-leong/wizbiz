@@ -78,7 +78,7 @@ export default function LaunchRound1Form({
                 🏢 Business capital <span className="font-normal text-gray-500">· per team</span>
               </label>
               <input id="groupCapital" name="groupCapital" type="number" min="1" required
-                defaultValue={settings.groupCapital ?? 1000}
+                defaultValue={settings.groupCapital ?? 200}
                 className="w-full mt-2 border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange" />
             </div>
             <div className="flex-1 rounded-xl border-2 border-teal/30 bg-teal/[0.04] p-3">
@@ -86,7 +86,7 @@ export default function LaunchRound1Form({
                 👤 Personal wallet <span className="font-normal text-gray-500">· per student</span>
               </label>
               <input id="personalStartingBalance" name="personalStartingBalance" type="number" min="0"
-                defaultValue={settings.personalStartingBalance ?? 0}
+                defaultValue={settings.personalStartingBalance ?? 50}
                 className="w-full mt-2 border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal" />
             </div>
           </div>

@@ -1,20 +1,22 @@
-// Group allocation for a class: 5-8 students per group, at most 8 groups.
-// Targeting 6 keeps group sizes near-identical, which matters because personal
-// wallets are the only new money entering a class economy — a team of 8 would
-// otherwise have far more spending power orbiting it than a team of 5.
+// Group allocation for a class: teams of 5, never a loose team of 1-2.
+// The number of teams is the headcount over 5 rounded to the nearest whole, and
+// students are then spread evenly, so every team is 5 give or take one: 39
+// students make seven teams of 5 and one of 4, 41 make seven of 5 and one of 6.
+// Classes too big for that (more than 8 teams) fall back to larger teams, as
+// each class only owns 8 team themes.
 
-export const MIN_GROUP_SIZE = 5
+export const TARGET_GROUP_SIZE = 5
+export const MIN_GROUP_SIZE = 4
 export const MAX_GROUP_SIZE = 8
-export const TARGET_GROUP_SIZE = 6
 export const MAX_GROUPS_PER_CLASS = 8
 
 export const MAX_CLASS_HEADCOUNT = MAX_GROUPS_PER_CLASS * MAX_GROUP_SIZE // 64
 
 export function groupCountFor(headcount: number): number {
-  const byTarget = Math.ceil(headcount / TARGET_GROUP_SIZE)
+  const nearest = Math.round(headcount / TARGET_GROUP_SIZE)
   // Never let a group exceed MAX_GROUP_SIZE, even if that beats the target.
   const minimumNeeded = Math.ceil(headcount / MAX_GROUP_SIZE)
-  return Math.max(1, Math.min(Math.max(byTarget, minimumNeeded), MAX_GROUPS_PER_CLASS))
+  return Math.max(1, Math.min(Math.max(nearest, minimumNeeded), MAX_GROUPS_PER_CLASS))
 }
 
 /** Sizes of each group, largest first, summing to headcount. */

@@ -1,7 +1,7 @@
 'use client'
 
 import { createProgramme } from '@/lib/programme-actions'
-import { allocateGroups, allocationError, MAX_GROUP_SIZE, MIN_GROUP_SIZE } from '@/lib/allocation'
+import { allocateGroups, allocationError, TARGET_GROUP_SIZE } from '@/lib/allocation'
 import { useState } from 'react'
 import Link from 'next/link'
 
@@ -69,7 +69,7 @@ export default function NewProgrammePage() {
             <div className="flex items-baseline justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">Classes</p>
               <p className="text-xs text-gray-400">
-                {MIN_GROUP_SIZE}–{MAX_GROUP_SIZE} students per group, groups sized automatically
+                Teams of {TARGET_GROUP_SIZE}, sized automatically
               </p>
             </div>
 
