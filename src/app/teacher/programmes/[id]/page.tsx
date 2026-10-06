@@ -4,6 +4,9 @@ import { eq, and, inArray, sql } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { requireTeacher, getProgrammeAccess } from '@/lib/authz'
+import { loadStoreLedger } from '@/lib/main-store'
+import MainStoreLedger from '../../MainStoreLedger'
+import ProgrammeAdminControls from './ProgrammeAdminControls'
 import { allocateGroups } from '@/lib/allocation'
 import { ADVANCING_PER_CLASS } from '@/lib/standings'
 import { listAssignableTeachers } from '@/lib/programme-actions'
@@ -12,8 +15,15 @@ import LaunchRound1Form from './LaunchRound1Form'
 import CreateFinalForm from './CreateFinalForm'
 import ClassTeacherField from './ClassTeacherField'
 
-export default async function ProgrammePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProgrammePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ tab?: string }>
+}) {
   const { id } = await params
+  const { tab } = await searchParams
   const programmeId = parseInt(id)
   const session = await requireTeacher()
 
@@ -37,6 +47,9 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
     .select()
     .from(competitions)
     .where(eq(competitions.programmeId, programmeId))
+
+  const storeLedger = await loadStoreLedger(session.id, { programmeId })
+  const showStore = storeLedger !== null && tab === 'store'
 
   const round1 = programmeCompetitions.filter(c => c.round === 1)
   const round2 = programmeCompetitions.find(c => c.round === 2) ?? null
@@ -102,9 +115,12 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-4 mb-5">
           <h1 className="text-3xl font-extrabold text-gray-900">{programme.name}</h1>
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-teal/15 text-teal-dark shrink-0">
-            {access.isOwner ? 'programme owner' : 'class teacher'}
-          </span>
+          <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-teal/15 text-teal-dark shrink-0">
+              {access.isOwner ? 'programme owner' : 'class teacher'}
+            </span>
+            {storeLedger && <ProgrammeAdminControls programmeId={programmeId} name={programme.name} />}
+          </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Stat label="Classes" value={allClasses.length} />
@@ -114,6 +130,29 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
+      {storeLedger && (
+        <div className="flex gap-1 border-b border-gray-200 mb-6">
+          {[
+            { key: 'overview', label: 'Overview', href: `/teacher/programmes/${programmeId}` },
+            { key: 'store', label: '🏪 Main Store', href: `/teacher/programmes/${programmeId}?tab=store` },
+          ].map(t => (
+            <Link
+              key={t.key}
+              href={t.href}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
+                (t.key === 'store') === showStore ? 'border-orange text-orange' : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {showStore && storeLedger ? (
+        <MainStoreLedger ledger={storeLedger} />
+      ) : (
+        <>
       {/* ── Round 1 ── */}
       <div className="flex flex-wrap items-baseline justify-between gap-3 mb-3">
         <div className="flex items-baseline gap-3">
@@ -265,6 +304,8 @@ export default async function ProgrammePage({ params }: { params: Promise<{ id: 
           finalistCount={round1.length * ADVANCING_PER_CLASS}
           spectatorCount={totalStudents - finalistStudentCount}
         />
+      )}
+        </>
       )}
     </div>
   )

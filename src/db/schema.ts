@@ -160,11 +160,15 @@ export const competitionOrganizers = pgTable('competition_organizers', {
 
 export const transfers = pgTable('transfers', {
   id: serial('id').primaryKey(),
-  fromGroupId: integer('from_group_id').references(() => groups.id).notNull(),
+  // Null when MAIN STORE is the sender (fromStore), which has no group.
+  fromGroupId: integer('from_group_id').references(() => groups.id),
   toGroupId: integer('to_group_id').references(() => groups.id),
   toStore: boolean('to_store').notNull().default(false),
+  fromStore: boolean('from_store').notNull().default(false),
   fromPersonal: boolean('from_personal').notNull().default(false),
-  sentByStudentId: integer('sent_by_student_id').references(() => students.id).notNull(),
+  // A student sends team payments; an admin teacher sends MAIN STORE payouts.
+  sentByStudentId: integer('sent_by_student_id').references(() => students.id),
+  sentByTeacherId: integer('sent_by_teacher_id').references(() => teachers.id),
   amount: integer('amount').notNull(),
   message: text('message'),
   createdAt: timestamp('created_at').defaultNow().notNull(),

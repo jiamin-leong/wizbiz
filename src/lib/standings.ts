@@ -35,7 +35,7 @@ export type StatementInputs = {
   }[]
   students: { groupId: number }[]
   transfers: {
-    fromGroupId: number
+    fromGroupId: number | null
     toGroupId: number | null
     toStore: boolean
     fromPersonal: boolean

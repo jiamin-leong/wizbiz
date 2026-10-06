@@ -110,7 +110,7 @@ export default async function TeacherDashboard() {
                 <div className="flex items-center gap-2 shrink-0 ml-4">
                   {(() => {
                     const c = classCountMap[p.id]
-                    if (p.ownerTeacherId === session.id) {
+                    if (p.ownerTeacherId === session.id || admin) {
                       return <span className="text-xs font-medium px-3 py-1 rounded-full bg-teal/15 text-teal-dark">programme owner</span>
                     }
                     if (c?.mine) {

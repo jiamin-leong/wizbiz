@@ -59,7 +59,7 @@ const ROLE_LABELS: Record<CompetitionRole, string> = {
   'programme-viewer': 'Viewing',
 }
 
-async function teacherIsAdmin(teacherId: number): Promise<boolean> {
+export async function teacherIsAdmin(teacherId: number): Promise<boolean> {
   const [row] = await db.select({ isAdmin: teachers.isAdmin }).from(teachers).where(eq(teachers.id, teacherId))
   return row?.isAdmin === true
 }
@@ -109,7 +109,7 @@ export async function getCompetitionAccess(
 
   if (competition.teacherId === teacherId) return full('owner')
 
-  if (competition.programmeId === null && await teacherIsAdmin(teacherId)) return full('admin')
+  if (await teacherIsAdmin(teacherId)) return full('admin')
 
   if (competition.programmeId) {
     const [programme] = await db
@@ -203,7 +203,7 @@ export type ProgrammeAccess = {
 
 /**
  * Any approved teacher may look at a programme and claim an unassigned class;
- * only the owner may change its shape. Opening a class's hackathon is a
+ * only the owner (or an admin) may change its shape. Opening a class's hackathon is a
  * separate check, so browsing a programme does not expose another class's
  * students.
  */
@@ -228,7 +228,9 @@ export async function getProgrammeAccess(
     .from(classes)
     .where(and(eq(classes.programmeId, programmeId), eq(classes.teacherId, teacherId)))
 
-  return { isOwner: programme.ownerTeacherId === teacherId, ownClassIds: own.map(c => c.id) }
+  // Admins hold the same rights as the programme's creator.
+  const isOwner = programme.ownerTeacherId === teacherId || await teacherIsAdmin(teacherId)
+  return { isOwner, ownClassIds: own.map(c => c.id) }
 }
 
 // ── Resolving a child record back to its competition ────────────────────────

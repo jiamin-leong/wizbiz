@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateCompetition } from '@/lib/teacher-actions'
+import { deleteCompetition } from '@/lib/admin-content-actions'
+import ConfirmDelete from '@/app/teacher/ConfirmDelete'
 import { competitionStatus } from '@/lib/competition'
 
 function toDateInput(date: Date) {
@@ -15,6 +17,7 @@ export default function CompetitionHeader({
   totalStudents,
   totalDays,
   canEdit = true,
+  canDelete = false,
   isFinal = false,
 }: {
   competition: {
@@ -29,6 +32,7 @@ export default function CompetitionHeader({
   totalStudents: number
   totalDays: number
   canEdit?: boolean
+  canDelete?: boolean
   isFinal?: boolean
 }) {
   const router = useRouter()
@@ -53,7 +57,7 @@ export default function CompetitionHeader({
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-      <div className="flex justify-between items-start mb-5">
+      <div className="flex flex-wrap justify-between items-start gap-y-3 mb-5">
         {editing && canEdit ? (
           <input
             autoFocus
@@ -103,6 +107,17 @@ export default function CompetitionHeader({
               ✏ Edit
             </button>
           ) : null}
+          {canDelete && !editing && (
+            <ConfirmDelete
+              name={competition.name}
+              what="This removes the competition with all its teams, students and transactions."
+              onDelete={async () => {
+                const res = await deleteCompetition(competition.id)
+                if (res.success) router.push('/teacher')
+                return res
+              }}
+            />
+          )}
         </div>
       </div>
 

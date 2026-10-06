@@ -39,15 +39,15 @@ export default async function StudentDashboard() {
       .from(transfers)
       .leftJoin(toGroups, eq(toGroups.id, transfers.toGroupId))
       .where(eq(transfers.fromGroupId, session.groupId)),
-    db.select({ id: transfers.id, amount: transfers.amount, message: transfers.message, createdAt: transfers.createdAt, otherGroup: fromGroups.name })
+    db.select({ id: transfers.id, amount: transfers.amount, message: transfers.message, createdAt: transfers.createdAt, fromStore: transfers.fromStore, otherGroup: fromGroups.name })
       .from(transfers)
-      .innerJoin(fromGroups, eq(fromGroups.id, transfers.fromGroupId))
+      .leftJoin(fromGroups, eq(fromGroups.id, transfers.fromGroupId))
       .where(eq(transfers.toGroupId, session.groupId)),
   ])
 
   const historyEntries = [
     ...sentTx.map(t => ({ id: `sent-${t.id}`, type: 'sent' as const, description: 'WizCoins sent', otherGroup: t.toStore ? 'MAIN STORE' : (t.otherGroup ?? ''), amount: t.amount, message: t.message, createdAt: t.createdAt })),
-    ...receivedTx.map(t => ({ id: `recv-${t.id}`, type: 'received' as const, description: 'WizCoins received', otherGroup: t.otherGroup, amount: t.amount, message: t.message, createdAt: t.createdAt })),
+    ...receivedTx.map(t => ({ id: `recv-${t.id}`, type: 'received' as const, description: 'WizCoins received', otherGroup: t.fromStore ? 'MAIN STORE' : (t.otherGroup ?? ''), amount: t.amount, message: t.message, createdAt: t.createdAt })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return (

@@ -417,7 +417,7 @@ export async function loadRankedStatements(competitionId: number) {
       groups: groupRows,
       students: studentRows,
       transfers: transferRows.filter(
-        t => groupIds.includes(t.fromGroupId) || (t.toGroupId !== null && groupIds.includes(t.toGroupId))
+        t => (t.fromGroupId !== null && groupIds.includes(t.fromGroupId)) || (t.toGroupId !== null && groupIds.includes(t.toGroupId))
       ),
       fallbackStartingCapital: competition.initialBalance,
     })

@@ -4,7 +4,9 @@ import { useState } from 'react'
 import GroupsTable from './GroupsTable'
 import BusinessStatements from './BusinessStatements'
 import Standings from './Standings'
+import MainStoreLedger from '@/app/teacher/MainStoreLedger'
 import { type Statement } from '@/lib/standings'
+import type { StoreLedger } from '@/lib/main-store'
 
 type Student = { id: number; loginCode: string; groupId: number; personalBalance: number }
 type Group = {
@@ -15,7 +17,7 @@ type Group = {
   kind: 'team' | 'judges' | 'spectators'
   students: Student[]
 }
-type Tab = 'groups' | 'business' | 'standings'
+type Tab = 'groups' | 'business' | 'standings' | 'store'
 
 export default function CompetitionTabs({
   groups,
@@ -24,6 +26,7 @@ export default function CompetitionTabs({
   competitionId,
   canManage,
   canAdvance,
+  storeLedger,
 }: {
   groups: Group[]
   initialBalance: number
@@ -31,6 +34,8 @@ export default function CompetitionTabs({
   competitionId: number
   canManage: boolean
   canAdvance: boolean
+  /** Null unless the viewer is an admin, which is what shows the Main Store tab. */
+  storeLedger: StoreLedger | null
 }) {
   const [tab, setTab] = useState<Tab>('groups')
 
@@ -38,6 +43,7 @@ export default function CompetitionTabs({
     { key: 'groups', label: 'Teams' },
     { key: 'business', label: 'Financials' },
     { key: 'standings', label: 'Standings' },
+    ...(storeLedger ? [{ key: 'store' as const, label: '🏪 Main Store' }] : []),
   ]
 
   return (
@@ -66,6 +72,7 @@ export default function CompetitionTabs({
       {tab === 'business' && (
         <BusinessStatements statements={statements} />
       )}
+      {tab === 'store' && storeLedger && <MainStoreLedger ledger={storeLedger} />}
       {tab === 'standings' && (
         <Standings statements={statements} competitionId={competitionId} canAdvance={canAdvance} />
       )}

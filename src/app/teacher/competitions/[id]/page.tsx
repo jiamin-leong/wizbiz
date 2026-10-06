@@ -6,8 +6,9 @@ import Link from 'next/link'
 import CompetitionTabs from './CompetitionTabs'
 import CompetitionHeader from './CompetitionHeader'
 import AutoRefresh from './AutoRefresh'
-import { requireTeacher, getCompetitionAccess, roleLabel } from '@/lib/authz'
+import { requireTeacher, getCompetitionAccess, roleLabel, teacherIsAdmin } from '@/lib/authz'
 import { computeStatements, rankStatements } from '@/lib/standings'
+import { loadStoreLedger } from '@/lib/main-store'
 
 export default async function CompetitionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -47,6 +48,8 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
       ? db.select({ name: classes.name }).from(classes).where(eq(classes.id, competition.classId)).then(r => r[0] ?? null)
       : Promise.resolve(null),
   ])
+
+  const storeLedger = await loadStoreLedger(session.id, { competitionId: competition.id })
 
   const groupsWithStudents = competitionGroups.map(g => ({
     ...g,
@@ -102,6 +105,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           totalStudents={totalStudents}
           totalDays={totalDays}
           canEdit={access.canManage}
+          canDelete={competition.programmeId === null && await teacherIsAdmin(session.id)}
           isFinal={competition.round === 2}
         />
 
@@ -112,6 +116,7 @@ export default async function CompetitionDetailPage({ params }: { params: Promis
           competitionId={competition.id}
           canManage={access.canManage}
           canAdvance={access.canAdvance && competition.round === 1 && competition.classId !== null}
+          storeLedger={storeLedger}
         />
         <AutoRefresh />
     </div>
