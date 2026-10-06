@@ -37,18 +37,18 @@ export default function ConfirmDelete({
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-2 z-20 w-[min(26rem,85vw)] border border-red-200 bg-red-50 rounded-xl p-4 text-left shadow-lg">
-          <p className="text-sm text-red-700 font-semibold">Delete &ldquo;{name}&rdquo; permanently?</p>
+          <p className="text-sm text-red-700 font-semibold">Delete &ldquo;{name.trim()}&rdquo; permanently?</p>
           <p className="text-xs text-red-600 mt-1">{what} This cannot be undone.</p>
           <input
             value={typed}
             onChange={e => setTyped(e.target.value)}
-            placeholder={`Type "${name}" to confirm`}
+            placeholder={`Type "${name.trim()}" to confirm`}
             className="w-full mt-3 border border-red-200 rounded-lg px-3 py-1.5 text-sm bg-white"
           />
           <div className="flex items-center gap-2 mt-3">
             <button
               onClick={confirm}
-              disabled={typed.trim() !== name || pending}
+              disabled={typed.trim() !== name.trim() || pending}
               className="text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-40 px-3 py-1.5 rounded-lg transition"
             >
               {pending ? 'Deleting…' : 'Delete forever'}
