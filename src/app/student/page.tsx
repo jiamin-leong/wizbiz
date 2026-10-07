@@ -8,6 +8,7 @@ import { eq, aliasedTable } from 'drizzle-orm'
 import { BalanceProvider } from './BalanceContext'
 import WalletCards from './WalletCards'
 import StudentTabs from './StudentTabs'
+import StudentAutoRefresh from './StudentAutoRefresh'
 
 export default async function StudentDashboard() {
   const session = await getSession()
@@ -52,6 +53,7 @@ export default async function StudentDashboard() {
 
   return (
     <BalanceProvider initialPersonal={student?.personalBalance ?? 0} initialBusiness={group.balance} startingCapital={group.startingCapital ?? competition.initialBalance}>
+      <StudentAutoRefresh />
       {isPreview && (
         <div className="fixed top-0 inset-x-0 z-50 bg-orange text-white flex items-center justify-between px-6 py-2.5 shadow-md">
           <div className="flex items-center gap-2 text-sm font-medium">

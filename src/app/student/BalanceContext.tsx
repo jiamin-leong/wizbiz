@@ -41,6 +41,14 @@ export function BalanceProvider({
 }) {
   const [personal, setPersonal] = useState(initialPersonal)
   const [business, setBusiness] = useState(initialBusiness)
+
+  // A refresh hands down fresh server balances; take them over the local copy.
+  const [seen, setSeen] = useState({ personal: initialPersonal, business: initialBusiness })
+  if (seen.personal !== initialPersonal || seen.business !== initialBusiness) {
+    setSeen({ personal: initialPersonal, business: initialBusiness })
+    setPersonal(initialPersonal)
+    setBusiness(initialBusiness)
+  }
   const [active, setActive] = useState<Wallet>('personal')
 
   const adjust = (delta: number, wallet: Wallet = active) =>
