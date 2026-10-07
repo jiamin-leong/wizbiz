@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { db } from '@/db'
 import { students, groups, competitions, transfers } from '@/db/schema'
-import { eq, aliasedTable } from 'drizzle-orm'
+import { and, eq, or, aliasedTable } from 'drizzle-orm'
 import { BalanceProvider } from './BalanceContext'
 import WalletCards from './WalletCards'
 import StudentTabs from './StudentTabs'
@@ -36,10 +36,16 @@ export default async function StudentDashboard() {
   const fromGroups = aliasedTable(groups, 'from_group')
 
   const [sentTx, receivedTx] = await Promise.all([
-    db.select({ id: transfers.id, amount: transfers.amount, message: transfers.message, createdAt: transfers.createdAt, toStore: transfers.toStore, otherGroup: toGroups.name })
+    // Business-wallet payments are the whole team's; personal-wallet payments
+    // are only ever the sender's own.
+    db.select({ id: transfers.id, amount: transfers.amount, message: transfers.message, createdAt: transfers.createdAt, toStore: transfers.toStore, fromPersonal: transfers.fromPersonal, paidBy: students.loginCode, otherGroup: toGroups.name })
       .from(transfers)
       .leftJoin(toGroups, eq(toGroups.id, transfers.toGroupId))
-      .where(eq(transfers.fromGroupId, session.groupId)),
+      .leftJoin(students, eq(students.id, transfers.sentByStudentId))
+      .where(and(
+        eq(transfers.fromGroupId, session.groupId),
+        or(eq(transfers.fromPersonal, false), eq(transfers.sentByStudentId, session.id)),
+      )),
     db.select({ id: transfers.id, amount: transfers.amount, message: transfers.message, createdAt: transfers.createdAt, fromStore: transfers.fromStore, otherGroup: fromGroups.name })
       .from(transfers)
       .leftJoin(fromGroups, eq(fromGroups.id, transfers.fromGroupId))
@@ -47,8 +53,8 @@ export default async function StudentDashboard() {
   ])
 
   const historyEntries = [
-    ...sentTx.map(t => ({ id: `sent-${t.id}`, type: 'sent' as const, description: 'WizCoins sent', otherGroup: t.toStore ? 'MAIN STORE' : (t.otherGroup ?? ''), amount: t.amount, message: t.message, createdAt: t.createdAt })),
-    ...receivedTx.map(t => ({ id: `recv-${t.id}`, type: 'received' as const, description: 'WizCoins received', otherGroup: t.fromStore ? 'MAIN STORE' : (t.otherGroup ?? ''), amount: t.amount, message: t.message, createdAt: t.createdAt })),
+    ...sentTx.map(t => ({ id: `sent-${t.id}`, type: 'sent' as const, wallet: (t.fromPersonal ? 'personal' : 'business') as 'personal' | 'business', by: t.fromPersonal ? null : t.paidBy, description: 'WizCoins sent', otherGroup: t.toStore ? 'MAIN STORE' : (t.otherGroup ?? ''), amount: t.amount, message: t.message, createdAt: t.createdAt })),
+    ...receivedTx.map(t => ({ id: `recv-${t.id}`, type: 'received' as const, wallet: 'business' as const, by: null, description: 'WizCoins received', otherGroup: t.fromStore ? 'MAIN STORE' : (t.otherGroup ?? ''), amount: t.amount, message: t.message, createdAt: t.createdAt })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   return (

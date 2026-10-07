@@ -1,8 +1,13 @@
 'use client'
 
+import { useBalance } from './BalanceContext'
+
 export type HistoryEntry = {
   id: string
   type: 'bought' | 'sold' | 'sent' | 'received'
+  wallet: 'personal' | 'business'
+  /** Login code of the teammate who paid, for business-wallet payments. */
+  by?: string | null
   description: string
   otherGroup: string
   amount: number
@@ -17,8 +22,17 @@ const typeConfig = {
   received: { label: 'Received', sign: '+', color: 'text-green-600', bg: 'bg-green-50', icon: '📥' },
 }
 
-export default function HistoryTab({ entries }: { entries: HistoryEntry[] }) {
-  if (entries.length === 0) {
+const walletBadge = {
+  personal: { label: '👤 My Wallet', cls: 'bg-teal/15 text-teal-dark' },
+  business: { label: '🏢 Team Business', cls: 'bg-orange/15 text-orange-dark' },
+}
+
+export default function HistoryTab({ entries: allEntries }: { entries: HistoryEntry[] }) {
+  // The wallet picked in "Spending from" decides which history is shown.
+  const { active } = useBalance()
+  const entries = allEntries.filter(e => e.wallet === active)
+
+  if (allEntries.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400">
         <p className="text-4xl mb-3">📜</p>
@@ -30,6 +44,9 @@ export default function HistoryTab({ entries }: { entries: HistoryEntry[] }) {
 
   return (
     <div className="flex flex-col gap-2">
+      {entries.length === 0 && (
+        <p className="text-center text-sm text-gray-400 py-10">Nothing in this wallet yet.</p>
+      )}
       {entries.map(e => {
         const cfg = typeConfig[e.type]
         return (
@@ -42,6 +59,10 @@ export default function HistoryTab({ entries }: { entries: HistoryEntry[] }) {
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{cfg.label}</span>
                 <span className="text-xs text-gray-400">·</span>
                 <span className="text-xs text-gray-400">{e.otherGroup}</span>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${walletBadge[e.wallet].cls}`}>
+                  {walletBadge[e.wallet].label}
+                </span>
+                {e.by && <span className="text-[10px] text-gray-400">paid by {e.by}</span>}
               </div>
               <p className="text-sm font-semibold text-gray-800 truncate">{e.description}</p>
               {e.message && (

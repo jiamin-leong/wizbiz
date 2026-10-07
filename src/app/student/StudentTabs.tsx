@@ -16,6 +16,15 @@ export default function StudentTabs({
 }) {
   const [tab, setTab] = useState<'send' | 'history'>('send')
   const [history, setHistory] = useState<HistoryEntry[]>(initialHistory)
+
+  // A refresh hands down the server's history; take it over the local copy
+  // (which also holds any just-sent optimistic entries).
+  const serverKey = initialHistory.map(e => e.id).join(',')
+  const [seenKey, setSeenKey] = useState(serverKey)
+  if (seenKey !== serverKey) {
+    setSeenKey(serverKey)
+    setHistory(initialHistory)
+  }
   const { active, setActive } = useBalance()
 
   function addHistory(entry: HistoryEntry) {

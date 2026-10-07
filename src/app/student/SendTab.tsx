@@ -21,7 +21,7 @@ export default function SendTab({
   onSent,
 }: {
   otherGroups: Group[]
-  onSent: (entry: { id: string; type: 'sent'; description: string; otherGroup: string; amount: number; message?: string | null; createdAt: Date }) => void
+  onSent: (entry: { id: string; type: 'sent'; wallet: 'personal' | 'business'; description: string; otherGroup: string; amount: number; message?: string | null; createdAt: Date }) => void
 }) {
   const { balance, spend, rollback, active, setActive } = useBalance()
   const [selectedId, setSelectedId] = useState<Recipient | null>(null)
@@ -80,6 +80,7 @@ export default function SendTab({
     onSent({
       id: `sent-optimistic-${Date.now()}`,
       type: 'sent',
+      wallet: active,
       description: 'WizCoins sent',
       otherGroup: sentToName,
       amount: sentAmount,
