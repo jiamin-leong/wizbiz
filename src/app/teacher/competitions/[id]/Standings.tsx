@@ -110,7 +110,7 @@ export default function Standings({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] bg-white rounded-xl border border-gray-100 text-sm">
+        <table className="w-full min-w-[640px] bg-white rounded-xl border border-gray-100 text-sm">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-100">
               {canAdvance && !isConfirmed && <th className="px-3 py-2 w-10 print-hide"></th>}
@@ -118,6 +118,7 @@ export default function Standings({
               <th className="px-3 py-2">Team</th>
               <th className="px-3 py-2 text-right">Profit</th>
               <th className="px-3 py-2 text-right">Revenue</th>
+              <th className="px-3 py-2 text-right">Expenses</th>
               <th className="px-3 py-2 text-right">Members</th>
               <th className="px-3 py-2 text-right">Profit / member</th>
             </tr>
@@ -151,6 +152,7 @@ export default function Standings({
                     {coins(s.profitLoss)}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums text-gray-500">{coins(s.revenue)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-gray-500">{coins(s.expenseToGroups + s.expenseToStore)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-gray-400">{s.members}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-gray-400">{coins(s.profitPerMember)}</td>
                 </tr>

@@ -6,6 +6,14 @@ import { eq, and, sql } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
+// The database refuses any statement that would take a business or personal
+// wallet below zero (groups_balance_nonneg, students_personal_balance_nonneg), which is what stops two simultaneous payments both
+// passing the balance check above and overspending. The whole batch rolls back.
+function isBalanceViolation(e: unknown): boolean {
+  const text = [e, (e as { cause?: unknown })?.cause].map(x => String((x as Error)?.message ?? x)).join(' ')
+  return text.includes('groups_balance_nonneg') || text.includes('students_personal_balance_nonneg')
+}
+
 export async function sendWizCoins(target: number | 'store', amount: number, message: string, wallet: 'personal' | 'business' = 'business') {
   const session = await getSession()
   if (!session || session.role !== 'student') redirect('/')
@@ -19,17 +27,22 @@ export async function sendWizCoins(target: number | 'store', amount: number, mes
     const [senderGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
     if (senderGroup.balance < amount) return { error: 'Insufficient WizCoins' }
 
-    await db.batch([
-      db.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId)),
-      db.insert(transfers).values({
-        fromGroupId: session.groupId,
-        toGroupId: null,
-        toStore: true,
-        sentByStudentId: session.id,
-        amount,
-        message: message.trim() || null,
-      }),
-    ])
+    try {
+      await db.batch([
+        db.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId)),
+        db.insert(transfers).values({
+          fromGroupId: session.groupId,
+          toGroupId: null,
+          toStore: true,
+          sentByStudentId: session.id,
+          amount,
+          message: message.trim() || null,
+        }),
+      ])
+    } catch (e) {
+      if (isBalanceViolation(e)) return { error: 'Insufficient WizCoins' }
+      throw e
+    }
 
     return { success: true }
   }
@@ -51,18 +64,23 @@ export async function sendWizCoins(target: number | 'store', amount: number, mes
     const [me] = await db.select({ personalBalance: students.personalBalance }).from(students).where(eq(students.id, session.id))
     if (me.personalBalance < amount) return { error: 'Insufficient WizCoins' }
 
-    await db.batch([
-      db.update(students).set({ personalBalance: sql`${students.personalBalance} - ${amount}` }).where(eq(students.id, session.id)),
-      db.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId)),
-      db.insert(transfers).values({
-        fromGroupId: session.groupId,
-        toGroupId,
-        fromPersonal: true,
-        sentByStudentId: session.id,
-        amount,
-        message: message.trim() || null,
-      }),
-    ])
+    try {
+      await db.batch([
+        db.update(students).set({ personalBalance: sql`${students.personalBalance} - ${amount}` }).where(eq(students.id, session.id)),
+        db.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId)),
+        db.insert(transfers).values({
+          fromGroupId: session.groupId,
+          toGroupId,
+          fromPersonal: true,
+          sentByStudentId: session.id,
+          amount,
+          message: message.trim() || null,
+        }),
+      ])
+    } catch (e) {
+      if (isBalanceViolation(e)) return { error: 'Insufficient WizCoins' }
+      throw e
+    }
 
     return { success: true }
   }
@@ -70,17 +88,22 @@ export async function sendWizCoins(target: number | 'store', amount: number, mes
   const [senderGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
   if (senderGroup.balance < amount) return { error: 'Insufficient WizCoins' }
 
-  await db.batch([
-    db.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId)),
-    db.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId)),
-    db.insert(transfers).values({
-      fromGroupId: session.groupId,
-      toGroupId,
-      sentByStudentId: session.id,
-      amount,
-      message: message.trim() || null,
-    }),
-  ])
+  try {
+    await db.batch([
+      db.update(groups).set({ balance: sql`${groups.balance} - ${amount}` }).where(eq(groups.id, session.groupId)),
+      db.update(groups).set({ balance: sql`${groups.balance} + ${amount}` }).where(eq(groups.id, toGroupId)),
+      db.insert(transfers).values({
+        fromGroupId: session.groupId,
+        toGroupId,
+        sentByStudentId: session.id,
+        amount,
+        message: message.trim() || null,
+      }),
+    ])
+  } catch (e) {
+    if (isBalanceViolation(e)) return { error: 'Insufficient WizCoins' }
+    throw e
+  }
 
   return { success: true }
 }
@@ -143,18 +166,23 @@ export async function buyListing(listingId: number, wallet: 'personal' | 'busine
       ? db.update(students).set({ personalBalance: sql`${students.personalBalance} - ${listing.price}` }).where(eq(students.id, session.id))
       : db.update(groups).set({ balance: sql`${groups.balance} - ${listing.price}` }).where(eq(groups.id, session.groupId))
 
-  await db.batch([
-    debitBuyer,
-    db.update(groups).set({ balance: sql`${groups.balance} + ${listing.price}` }).where(eq(groups.id, listing.groupId)),
-    db.update(listings).set({ quantity: sql`${listings.quantity} - 1` }).where(eq(listings.id, listingId)),
-    db.insert(transactions).values({
-      listingId,
-      buyerStudentId: session.id,
-      buyerGroupId: session.groupId,
-      sellerGroupId: listing.groupId,
-      amount: listing.price,
-    }),
-  ])
+  try {
+    await db.batch([
+      debitBuyer,
+      db.update(groups).set({ balance: sql`${groups.balance} + ${listing.price}` }).where(eq(groups.id, listing.groupId)),
+      db.update(listings).set({ quantity: sql`${listings.quantity} - 1` }).where(eq(listings.id, listingId)),
+      db.insert(transactions).values({
+        listingId,
+        buyerStudentId: session.id,
+        buyerGroupId: session.groupId,
+        sellerGroupId: listing.groupId,
+        amount: listing.price,
+      }),
+    ])
+  } catch (e) {
+    if (isBalanceViolation(e)) return { error: 'Insufficient WizCoins' }
+    throw e
+  }
 
   return { success: true }
 }

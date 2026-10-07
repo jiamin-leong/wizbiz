@@ -1,4 +1,5 @@
-import { pgTable, serial, text, integer, timestamp, pgEnum, numeric, uniqueIndex, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, integer, timestamp, pgEnum, numeric, uniqueIndex, boolean, check } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const listingStatusEnum = pgEnum('listing_status', ['pending', 'approved', 'rejected'])
 export const competitionStatusEnum = pgEnum('competition_status', ['active', 'ended'])
@@ -126,7 +127,10 @@ export const groups = pgTable('groups', {
   qualified: boolean('qualified').notNull().default(false),
   qualifiedRank: integer('qualified_rank'),
   kind: groupKindEnum('kind').notNull().default('team'),
-})
+}, (t) => [
+  // A business can never go below zero; see scripts/migrate-nonnegative-balance.ts.
+  check('groups_balance_nonneg', sql`${t.balance} >= 0`),
+])
 
 export const students = pgTable('students', {
   id: serial('id').primaryKey(),
@@ -138,6 +142,8 @@ export const students = pgTable('students', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => [
   uniqueIndex('students_group_login_code_idx').on(t.groupId, t.loginCode),
+  // A personal wallet can never go below zero; see scripts/migrate-nonnegative-balance.ts.
+  check('students_personal_balance_nonneg', sql`${t.personalBalance} >= 0`),
 ])
 
 export const listings = pgTable('listings', {
