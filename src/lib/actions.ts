@@ -29,7 +29,8 @@ export async function teacherLogin(formData: FormData) {
 
 export async function studentLogin(formData: FormData) {
   const loginCode = ((formData.get('loginCode') as string) ?? '').toUpperCase().trim()
-  const password = formData.get('password') as string
+  // Team passwords are uppercase words, so like the login code they ignore case and stray spaces.
+  const password = ((formData.get('password') as string) ?? '').toUpperCase().trim()
   const chosenCompetitionId = parseInt(formData.get('competitionId') as string)
 
   if (!loginCode) return { error: 'Enter your login code' }
