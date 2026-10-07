@@ -9,9 +9,12 @@ type Group = { id: number; name: string; balance: number }
 
 export default function StudentTabs({
   otherGroups,
+  treasurerCode,
   initialHistory,
 }: {
   otherGroups: Group[]
+  /** Set when someone else on the team is the treasurer, so this student cannot pay from the business wallet. */
+  treasurerCode: string | null
   initialHistory: HistoryEntry[]
 }) {
   const [tab, setTab] = useState<'send' | 'history'>('send')
@@ -79,7 +82,7 @@ export default function StudentTabs({
 
       {tab === 'send' && (
         <div className={`rounded-xl border-l-4 pl-4 py-3 transition-colors ${panelTint}`}>
-          <SendTab otherGroups={otherGroups} onSent={addHistory} />
+          <SendTab otherGroups={otherGroups} treasurerCode={treasurerCode} onSent={addHistory} />
         </div>
       )}
       {tab === 'history' && <HistoryTab entries={history} />}

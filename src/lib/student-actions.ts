@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { listings, groups, transactions, students, transfers } from '@/db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
+import { treasurerForGroup } from '@/lib/treasurer'
 import { redirect } from 'next/navigation'
 
 // The database refuses any statement that would take a business or personal
@@ -12,6 +13,15 @@ import { redirect } from 'next/navigation'
 function isBalanceViolation(e: unknown): boolean {
   const text = [e, (e as { cause?: unknown })?.cause].map(x => String((x as Error)?.message ?? x)).join(' ')
   return text.includes('groups_balance_nonneg') || text.includes('students_personal_balance_nonneg')
+}
+
+// Only a team's treasurer may pay from the shared business wallet.
+async function treasurerError(groupId: number, studentId: number): Promise<string | null> {
+  const treasurer = await treasurerForGroup(groupId)
+  if (treasurer && treasurer.id !== studentId) {
+    return `Only ${treasurer.loginCode}, your team's treasurer, can pay from the Team Business wallet.`
+  }
+  return null
 }
 
 export async function sendWizCoins(target: number | 'store', amount: number, message: string, wallet: 'personal' | 'business' = 'business') {
@@ -23,6 +33,9 @@ export async function sendWizCoins(target: number | 'store', amount: number, mes
   // not credited to any group. Inventory of purchasable items is a phase-2 feature.
   if (target === 'store') {
     if (wallet !== 'business') return { error: 'MAIN STORE can only be paid from the Team Business wallet.' }
+
+    const notTreasurer = await treasurerError(session.groupId, session.id)
+    if (notTreasurer) return { error: notTreasurer }
 
     const [senderGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
     if (senderGroup.balance < amount) return { error: 'Insufficient WizCoins' }
@@ -84,6 +97,9 @@ export async function sendWizCoins(target: number | 'store', amount: number, mes
 
     return { success: true }
   }
+
+  const notTreasurer = await treasurerError(session.groupId, session.id)
+  if (notTreasurer) return { error: notTreasurer }
 
   const [senderGroup] = await db.select({ balance: groups.balance }).from(groups).where(eq(groups.id, session.groupId))
   if (senderGroup.balance < amount) return { error: 'Insufficient WizCoins' }

@@ -9,6 +9,7 @@ import { BalanceProvider } from './BalanceContext'
 import WalletCards from './WalletCards'
 import StudentTabs from './StudentTabs'
 import StudentAutoRefresh from './StudentAutoRefresh'
+import { treasurerForGroup } from '@/lib/treasurer'
 
 export default async function StudentDashboard() {
   const session = await getSession()
@@ -31,6 +32,8 @@ export default async function StudentDashboard() {
 
   // Judges and knocked-out spectators are not payable businesses.
   const otherGroups = allGroups.filter(g => g.id !== session.groupId && g.kind === 'team')
+
+  const treasurer = await treasurerForGroup(session.groupId)
 
   const toGroups = aliasedTable(groups, 'to_group')
   const fromGroups = aliasedTable(groups, 'from_group')
@@ -105,6 +108,7 @@ export default async function StudentDashboard() {
         <main className="max-w-4xl mx-auto px-6 py-6">
           <StudentTabs
             otherGroups={otherGroups}
+            treasurerCode={treasurer && treasurer.id !== session.id ? treasurer.loginCode : null}
             initialHistory={historyEntries}
           />
         </main>

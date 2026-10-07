@@ -18,9 +18,11 @@ type Recipient = number | 'store'
 
 export default function SendTab({
   otherGroups,
+  treasurerCode,
   onSent,
 }: {
   otherGroups: Group[]
+  treasurerCode: string | null
   onSent: (entry: { id: string; type: 'sent'; wallet: 'personal' | 'business'; description: string; otherGroup: string; amount: number; message?: string | null; createdAt: Date }) => void
 }) {
   const { balance, spend, rollback, active, setActive } = useBalance()
@@ -45,7 +47,9 @@ export default function SendTab({
   // else; personal buys from businesses and never the store. Each wallet is
   // shown only its own targets, so an impossible payment can't be composed.
   const isPersonalWallet = active === 'personal'
-  const canSend = validForWallet !== null && parsedAmount >= 1 && parsedAmount <= balance
+  // Only the team's treasurer may pay from the shared business wallet.
+  const blockedByTreasurer = active === 'business' && treasurerCode !== null
+  const canSend = !blockedByTreasurer && validForWallet !== null && parsedAmount >= 1 && parsedAmount <= balance
 
   // Accents follow the active wallet so the whole Send panel reads as one color.
   const isPersonal = isPersonalWallet
@@ -104,6 +108,12 @@ export default function SendTab({
 
   return (
     <div className="max-w-lg mx-auto flex flex-col gap-5">
+
+      {blockedByTreasurer && (
+        <p className="rounded-xl bg-orange/10 border border-orange/30 px-4 py-3 text-sm text-orange-dark">
+          🔒 Only <span className="font-bold">{treasurerCode}</span>, your team&apos;s treasurer, can pay from the Team Business wallet. You can still see its balance and history.
+        </p>
+      )}
 
       {/* Recipient picker — each wallet sees only what it may pay */}
       <div>

@@ -401,6 +401,7 @@ export default function GroupsTable({
                     {si === 0 && groupCells}
                     <td className={pCell}>
                       <span className="font-pixel text-xs bg-paper-2 text-orange-dark px-2.5 py-1 rounded-full whitespace-nowrap">{s.loginCode}</span>
+                      {g.kind === 'team' && si === 0 && <span className="ml-1.5 text-[10px] font-semibold text-orange-dark">💼 treasurer</span>}
                     </td>
                     <td className={`${pCell} font-semibold text-teal tabular-nums`}>{s.personalBalance.toLocaleString()}</td>
                     {editing && (
@@ -502,9 +503,12 @@ export default function GroupsTable({
             </div>
 
             <div className="mt-3 divide-y divide-gray-50 border-t border-gray-50">
-              {[...g.students].sort((a, b) => a.loginCode.localeCompare(b.loginCode)).map(s => (
+              {[...g.students].sort((a, b) => a.loginCode.localeCompare(b.loginCode)).map((s, si) => (
                 <div key={s.id} className="flex items-center justify-between gap-2 py-2">
-                  <span className="font-pixel text-xs bg-paper-2 text-orange-dark px-2.5 py-1 rounded-full whitespace-nowrap">{s.loginCode}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-pixel text-xs bg-paper-2 text-orange-dark px-2.5 py-1 rounded-full whitespace-nowrap">{s.loginCode}</span>
+                    {g.kind === 'team' && si === 0 && <span className="text-[10px] font-semibold text-orange-dark">💼 treasurer</span>}
+                  </span>
                   <div className="flex items-center gap-3">
                     <span className="text-sm">
                       <span className="font-semibold text-teal tabular-nums">{s.personalBalance.toLocaleString()}</span>
