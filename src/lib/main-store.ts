@@ -31,7 +31,7 @@ const formatWhen = (d: Date) =>
   })
 
 /** MAIN STORE starts every class hackathon (and standalone competition) with this many WizCoins. */
-export const STORE_BASELINE = 100
+export const STORE_BASELINE = 4000
 
 async function flows(competitionIds: number[]): Promise<number> {
   if (competitionIds.length === 0) return 0
